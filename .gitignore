@@ -1,15 +1,106 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# -------------------------------------------------------
+# Built application files
+# -------------------------------------------------------
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+
+# Java/Kotlin compiled output
+*.class
+*.kotlin_module
+
+# -------------------------------------------------------
+# Gradle
+# -------------------------------------------------------
+.gradle/
+build/
+**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+.gradletasknamecache
+
+# -------------------------------------------------------
+# Local configuration (SDK path, signing config, etc.)
+# -------------------------------------------------------
 local.properties
+
+# -------------------------------------------------------
+# IntelliJ IDEA / Android Studio
+# -------------------------------------------------------
+*.iml
+*.ipr
+*.iws
+.idea/
+# Keep VCS mappings if desired — otherwise leave commented
+#!.idea/vcs.xml
+
+# -------------------------------------------------------
+# Android Studio captures & navigation editor
+# -------------------------------------------------------
+captures/
+.navigation/
+
+# -------------------------------------------------------
+# External native build
+# -------------------------------------------------------
+.externalNativeBuild/
+.cxx/
+
+# -------------------------------------------------------
+# ProGuard
+# -------------------------------------------------------
+proguard/
+
+# -------------------------------------------------------
+# Keystore / signing files
+# Uncomment if you do NOT want to commit these:
+# -------------------------------------------------------
+#*.jks
+#*.keystore
+
+# -------------------------------------------------------
+# Google Services (contains API keys — keep private!)
+# -------------------------------------------------------
+google-services.json
+google-services.xml
+
+# -------------------------------------------------------
+# Lint output
+# -------------------------------------------------------
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+
+# -------------------------------------------------------
+# Test results / reports
+# -------------------------------------------------------
+test-results/
+**/test-results/
+
+# -------------------------------------------------------
+# Log files
+# -------------------------------------------------------
+*.log
+
+# -------------------------------------------------------
+# OS-generated files
+# -------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -------------------------------------------------------
+# Generated / release output
+# -------------------------------------------------------
+gen/
+out/
+release/
