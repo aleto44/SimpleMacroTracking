@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/diaryFragment">
+
+    <!-- ── Bottom-nav top-level destinations ── -->
+
+    <fragment
+        android:id="@+id/diaryFragment"
+        android:name="com.example.simplemacrotracking.ui.diary.DiaryFragment"
+        android:label="Diary"
+        tools:layout="@layout/fragment_diary">
+
+        <action
+            android:id="@+id/action_diary_to_foodDatabase"
+            app:destination="@id/foodDatabaseFragment" />
+        <action
+            android:id="@+id/action_diary_to_itemActionSheet"
+            app:destination="@id/itemActionSheet" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/foodDatabaseFragment"
+        android:name="com.example.simplemacrotracking.ui.fooddb.FoodDatabaseFragment"
+        android:label="Food Database"
+        tools:layout="@layout/fragment_food_database">
+
+        <argument
+            android:name="pickerMode"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="targetDate"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <action
+            android:id="@+id/action_foodDatabase_to_addEntryBottomSheet"
+            app:destination="@id/addEntryBottomSheet" />
+        <action
+            android:id="@+id/action_foodDatabase_to_itemActionSheet"
+            app:destination="@id/itemActionSheet" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/weightFragment"
+        android:name="com.example.simplemacrotracking.ui.weight.WeightFragment"
+        android:label="Weight Log"
+        tools:layout="@layout/fragment_weight">
+
+        <action
+            android:id="@+id/action_weight_to_addWeightDialog"
+            app:destination="@id/addWeightDialogFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.simplemacrotracking.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <!-- ── Shared dialog / bottom-sheet destinations ── -->
+
+    <dialog
+        android:id="@+id/addEntryBottomSheet"
+        android:name="com.example.simplemacrotracking.ui.entry.AddEntryBottomSheet"
+        android:label="Add Food">
+        <argument
+            android:name="targetDate"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="editFoodId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+
+        <action
+            android:id="@+id/action_addEntryBottomSheet_to_itemActionSheet"
+            app:destination="@id/itemActionSheet" />
+    </dialog>
+
+    <dialog
+        android:id="@+id/itemActionSheet"
+        android:name="com.example.simplemacrotracking.ui.shared.ItemActionSheet"
+        android:label="Add to Diary">
+        <argument
+            android:name="foodItemId"
+            app:argType="long" />
+        <argument
+            android:name="targetDate"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="diaryEntryId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+
+        <action
+            android:id="@+id/action_itemActionSheet_to_addEntryBottomSheet"
+            app:destination="@id/addEntryBottomSheet" />
+    </dialog>
+
+    <dialog
+        android:id="@+id/addWeightDialogFragment"
+        android:name="com.example.simplemacrotracking.ui.shared.AddWeightDialogFragment"
+        android:label="Add Weight Entry" />
+
+</navigation>
+

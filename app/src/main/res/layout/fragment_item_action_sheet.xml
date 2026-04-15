@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Header row: food name + edit icon -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+        <TextView android:id="@+id/tv_food_name"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp" android:textStyle="bold" />
+        <ImageButton android:id="@+id/btn_edit_food"
+            android:layout_width="40dp" android:layout_height="40dp"
+            android:src="@drawable/ic_edit"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Edit food" />
+    </LinearLayout>
+
+    <TextView android:id="@+id/tv_food_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="13sp" android:alpha="0.7"
+        android:layout_marginBottom="12dp" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Amount" android:textStyle="bold" android:layout_marginBottom="4dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_amount"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:id="@+id/tv_unit"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="8dp" android:textSize="14sp" />
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="12dp">
+            <TextView android:id="@+id/tv_preview_calories" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Calories: 0" />
+            <TextView android:id="@+id/tv_preview_protein" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Protein: 0 g" />
+            <TextView android:id="@+id/tv_preview_carbs" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Carbs: 0 g" />
+            <TextView android:id="@+id/tv_preview_fat" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Fat: 0 g" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="end">
+        <Button android:id="@+id/btn_cancel" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Cancel"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_marginEnd="8dp" />
+        <Button android:id="@+id/btn_action" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Add to Diary"
+            android:enabled="false" />
+    </LinearLayout>
+
+</LinearLayout>
+

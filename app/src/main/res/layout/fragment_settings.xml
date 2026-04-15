@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Daily Goals" android:textStyle="bold" android:textSize="18sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Calories -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Calories" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="8dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_calories"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Protein + Carbs row -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="8dp">
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:hint="Protein (g)"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginEnd="4dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_protein"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:hint="Carbs (g)"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginStart="4dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_carbs"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- Fat -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Fat (g)" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="12dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_fat"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button android:id="@+id/btn_save_goals"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Save Goals" android:layout_marginBottom="16dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="?attr/dividerHorizontal" android:layout_marginBottom="16dp" />
+
+        <!-- Weight unit -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Weight Unit" android:textStyle="bold" android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup android:id="@+id/rg_weight_unit"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="16dp">
+            <RadioButton android:id="@+id/rb_lb" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="lb" android:checked="true" />
+            <RadioButton android:id="@+id/rb_kg" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="kg"
+                android:layout_marginStart="16dp" />
+        </RadioGroup>
+
+        <ProgressBar android:id="@+id/progress_converting"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:visibility="gone" android:layout_marginBottom="16dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="?attr/dividerHorizontal" android:layout_marginBottom="16dp" />
+
+        <!-- AI API Key -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="AI API Key" android:textStyle="bold" android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Gemini API Key"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:passwordToggleEnabled="true"
+            android:layout_marginBottom="8dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_api_key"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPassword" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button android:id="@+id/btn_save_api_key"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Save API Key" android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_test_api_key"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Test"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="16dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="?attr/dividerHorizontal" android:layout_marginBottom="16dp" />
+
+        <!-- Data / CSV -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Data" android:textStyle="bold" android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_export_diary"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Export Diary CSV"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_export_weight"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Export Weight CSV"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_import_csv"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Import CSV"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="16dp" />
+
+    </LinearLayout>
+
+</ScrollView>
+
