@@ -81,8 +81,7 @@
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/line_chart"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="200dp"
         android:layout_marginBottom="8dp" />
 
     <!-- Stats -->
@@ -102,6 +101,28 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="15sp"
+        android:layout_marginBottom="12dp"
         android:text="Change: —" />
+
+    <!-- All entries header -->
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/dividerHorizontal" android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="All Entries"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Scrollable entries list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_weight_entries"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:nestedScrollingEnabled="true"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
 </LinearLayout>

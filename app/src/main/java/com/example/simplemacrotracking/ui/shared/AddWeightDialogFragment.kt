@@ -23,27 +23,60 @@ class AddWeightDialogFragment : DialogFragment() {
 
     @Inject lateinit var settingsPrefs: SettingsPrefs
 
-    // Activity-scoped so WeightFragment observes the same instance
     private val weightViewModel: WeightViewModel by activityViewModels()
     private var selectedDate: LocalDate = LocalDate.now()
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+    // When editing an existing entry, this holds its id so we update rather than insert
+    private var editingEntryId: Long? = null
+
+    companion object {
+        private const val ARG_ENTRY_ID = "entry_id"
+        private const val ARG_ENTRY_VALUE = "entry_value"
+        private const val ARG_ENTRY_DATE = "entry_date"
+
+        fun newEditInstance(entry: WeightEntry): AddWeightDialogFragment {
+            return AddWeightDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putLong(ARG_ENTRY_ID, entry.id)
+                    putFloat(ARG_ENTRY_VALUE, entry.value)
+                    putString(ARG_ENTRY_DATE, entry.date.toString())
+                }
+            }
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val binding = DialogAddWeightBinding.inflate(LayoutInflater.from(requireContext()))
         val unit = settingsPrefs.preferredWeightUnit
         binding.tvWeightLabel.text = "Weight (${unit.name.lowercase()})"
 
-        // Initialise date field
+        // Pre-populate if editing
+        arguments?.let { args ->
+            if (args.containsKey(ARG_ENTRY_ID)) {
+                editingEntryId = args.getLong(ARG_ENTRY_ID)
+                binding.etWeight.setText(args.getFloat(ARG_ENTRY_VALUE).toString())
+                selectedDate = LocalDate.parse(args.getString(ARG_ENTRY_DATE))
+            }
+        }
+
         binding.etDate.setText(selectedDate.format(dateFormatter))
         binding.etDate.setOnClickListener { showDatePicker(binding) }
 
+        val title = if (editingEntryId != null) "Edit Weight Entry" else "Add Weight Entry"
+
         return MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Add Weight Entry")
+            .setTitle(title)
             .setView(binding.root)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Save") { _, _ ->
                 val value = binding.etWeight.text.toString().toFloatOrNull() ?: return@setPositiveButton
-                weightViewModel.addWeightEntry(WeightEntry(date = selectedDate, value = value, unit = unit))
+                val id = editingEntryId
+                if (id != null) {
+                    weightViewModel.updateWeightEntry(WeightEntry(id = id, date = selectedDate, value = value, unit = unit))
+                } else {
+                    weightViewModel.addWeightEntry(WeightEntry(date = selectedDate, value = value, unit = unit))
+                }
             }
             .create()
     }

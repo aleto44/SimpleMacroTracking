@@ -9,10 +9,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.WeightEntry
 import com.example.simplemacrotracking.databinding.FragmentWeightBinding
+import com.example.simplemacrotracking.ui.shared.AddWeightDialogFragment
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -29,6 +29,7 @@ class WeightFragment : Fragment() {
     private var _binding: FragmentWeightBinding? = null
     private val binding get() = _binding!!
     private val viewModel: WeightViewModel by viewModels()
+    private lateinit var entryAdapter: WeightEntryAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -41,9 +42,11 @@ class WeightFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupChart()
+        setupEntriesList()
 
         binding.btnAddWeight.setOnClickListener {
-            findNavController().navigate(R.id.action_weight_to_addWeightDialog)
+            AddWeightDialogFragment()
+                .show(parentFragmentManager, "add_weight")
         }
 
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -63,6 +66,19 @@ class WeightFragment : Fragment() {
                 viewModel.uiState.collect { state -> render(state) }
             }
         }
+    }
+
+    private fun setupEntriesList() {
+        entryAdapter = WeightEntryAdapter(
+            onEdit = { entry ->
+                AddWeightDialogFragment.newEditInstance(entry)
+                    .show(parentFragmentManager, "edit_weight")
+            },
+            onDelete = { entry ->
+                viewModel.deleteWeightEntry(entry)
+            }
+        )
+        binding.rvWeightEntries.adapter = entryAdapter
     }
 
     private fun setupChart() {
@@ -94,6 +110,8 @@ class WeightFragment : Fragment() {
     private fun render(state: WeightUiState) {
         updateChart(state.filteredEntries)
         updateStats(state.filteredEntries, state.allEntries)
+        // Show all entries newest-first in the list
+        entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })
     }
 
     private fun updateChart(entries: List<WeightEntry>) {

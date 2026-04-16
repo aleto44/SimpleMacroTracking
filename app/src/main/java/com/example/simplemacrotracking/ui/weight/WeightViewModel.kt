@@ -45,6 +45,10 @@ class WeightViewModel @Inject constructor(
         viewModelScope.launch { weightRepository.insertWeightEntry(entry) }
     }
 
+    fun updateWeightEntry(entry: WeightEntry) {
+        viewModelScope.launch { weightRepository.updateWeightEntry(entry) }
+    }
+
     fun deleteWeightEntry(entry: WeightEntry) {
         viewModelScope.launch { weightRepository.deleteWeightEntry(entry) }
     }
