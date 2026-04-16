@@ -7,13 +7,12 @@
 
     <!-- Drag handle -->
     <View
-        android:layout_width="32dp"
+        android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
-        android:background="#CCCCCC"
-        android:backgroundTint="@null" />
+        android:background="@color/color_border" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"

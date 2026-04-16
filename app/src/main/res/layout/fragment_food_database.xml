@@ -3,19 +3,25 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/color_bg_primary">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="@color/color_bg_primary">
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Search foods..."
             app:startIconDrawable="@drawable/ic_search"
+            app:startIconTint="@color/color_text_secondary"
+            app:hintTextColor="@color/color_text_secondary"
+            app:boxStrokeColor="@color/color_border"
+            app:boxBackgroundColor="@color/color_bg_elevated"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_marginBottom="8dp">
 
@@ -24,7 +30,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
-                android:imeOptions="actionSearch" />
+                android:imeOptions="actionSearch"
+                android:textColor="@color/color_text_primary"
+                android:textColorHint="@color/color_text_secondary" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -50,6 +58,7 @@
                 android:text="No foods yet"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:textColor="@color/color_text_primary"
                 android:layout_marginBottom="8dp" />
 
             <TextView
@@ -58,13 +67,11 @@
                 android:layout_height="wrap_content"
                 android:text="Tap + to add your first food"
                 android:textSize="14sp"
-                android:alpha="0.6"
+                android:textColor="@color/color_text_secondary"
                 android:gravity="center" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

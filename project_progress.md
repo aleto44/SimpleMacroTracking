@@ -15,6 +15,12 @@
 | Phase 5 | Weight log + MPAndroidChart | ✅ Complete |
 | Phase 6 | CSV import/export | ✅ Complete |
 | Phase 7 | Polish & edge cases | ⏳ Not Started |
+| Phase 8 | Theme & Color System (Robinhood dark) | ✅ Complete |
+| Phase 9 | Diary Screen Redesign | 🔄 POC Done |
+| Phase 10 | Weight Screen Redesign | ⏳ Not Started |
+| Phase 11 | Food DB & Entry Sheets Redesign | ⏳ Not Started |
+| Phase 12 | Settings Screen Redesign | ⏳ Not Started |
+| Phase 13 | Navigation & Global Chrome | ✅ Complete |
 
 ---
 
@@ -97,7 +103,50 @@ All items previously completed.
 
 ---
 
-## Phase 7 — Polish
+## Phase 8 — Theme & Color System ✅
+
+- [x] `values/colors.xml` — Full Robinhood dark token set (bg_primary `#0A0A0A`, bg_surface `#111111`, border `#1E1E1E`, accent_green `#00C805`, accent_red `#FF5000`, text_primary/secondary/disabled)
+- [x] `values/themes.xml` — All color attrs wired to tokens; `Style.Macro.Card`, `Style.Macro.Button.Primary/Ghost`, `Style.Macro.Chip`, `Style.Macro.InputField`, `TextAppearance.Macro.*`, bottom sheet theme
+- [x] `values-night/themes.xml` — Mirrors day (dark is canonical)
+
+---
+
+## Phase 9 — Diary Screen Redesign 🔄 POC Done
+
+- [x] `fragment_diary.xml` — Hero calorie `MaterialCardView`; 2×2 macro GridLayout cards; `‹ ›` ASCII date nav; emoji labels (🔥💪🌾🥑); `⬤ TODAY'S ENTRIES` section header
+- [x] `item_diary_entry.xml` — 0dp elevation, 12dp corners, `color_border` stroke, green calorie right-aligned, `›` chevron
+- [x] `DiaryFragment.kt` — Hero calorie wired with remaining/over logic; green/red color switch
+- [x] `DiaryAdapter.kt` — Emoji macro symbols in detail row, green calorie chip
+
+---
+
+## Phase 10 — Weight Screen Redesign
+
+- [ ] `fragment_weight.xml` — Stat tile cards, styled chips, `★ WEIGHT LOG` header
+- [ ] `item_weight_entry.xml` — Trend arrows `↑↓`
+- [ ] `WeightFragment.kt` — MPAndroidChart colors (green line, dark grid)
+
+---
+
+## Phase 11 — Food DB & Entry Sheets Redesign
+
+- [ ] `fragment_food_database.xml` — Styled search bar, empty state
+- [ ] `item_food.xml` — Dark card style, emoji macro pill row
+- [ ] `fragment_add_entry_bottom_sheet.xml` — Unicode tab labels (✏️ 📷 ⚡), styled handle
+- [ ] `fragment_manual_entry.xml`, `fragment_ai_entry.xml`, `fragment_barcode_entry.xml` — `Style.Macro.InputField` + `Style.Macro.Button.Primary`
+
+---
+
+## Phase 12 — Settings Screen Redesign
+
+- [ ] `fragment_settings.xml` — `◎` section headers, ghost buttons, card toggle for weight unit
+
+---
+
+## Phase 13 — Navigation & Global Chrome ✅
+
+- [x] `activity_main.xml` — Dark top spacer, `color_border` nav border, bottom nav with `bottom_nav_item` color state list, green FAB
+- [x] `color/bottom_nav_item.xml` — Green when active, `color_text_secondary` default
 
 - [ ] Empty states on Diary, Food DB, Weight screens
 - [ ] Offline/network error handling in repositories

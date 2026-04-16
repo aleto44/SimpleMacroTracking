@@ -19,7 +19,7 @@ class MacroProgressView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x33000000 // semi-transparent black track
+        color = 0xFF1E1E1E.toInt() // color_border — visible on dark bg
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()

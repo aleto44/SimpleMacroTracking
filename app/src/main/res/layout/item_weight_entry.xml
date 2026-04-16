@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="8dp"
+    android:paddingVertical="10dp"
     android:paddingHorizontal="4dp">
 
     <TextView
@@ -12,7 +12,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:textColor="@color/color_text_secondary" />
 
     <TextView
         android:id="@+id/tv_entry_value"
@@ -20,6 +21,7 @@
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:textStyle="bold"
+        android:textColor="@color/color_text_primary"
         android:layout_marginEnd="12dp" />
 
     <ImageButton
@@ -27,6 +29,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_edit"
+        android:tint="@color/color_text_secondary"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Edit"
         android:padding="4dp"
@@ -37,9 +40,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_delete"
+        android:tint="@color/color_accent_red"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Delete"
         android:padding="4dp" />
 
 </LinearLayout>
-

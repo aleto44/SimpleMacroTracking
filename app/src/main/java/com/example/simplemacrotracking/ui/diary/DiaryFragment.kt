@@ -108,10 +108,23 @@ class DiaryFragment : Fragment() {
         binding.tvDate.text = state.date.format(dateFormatter)
         adapter.submitList(state.entries)
 
-        // Calories
-        val calRatio = if (state.goals.calories > 0) state.consumed.calories / state.goals.calories else 0f
+        // Hero calories
+        val calConsumed = state.consumed.calories.toInt()
+        val calGoal = state.goals.calories.toInt()
+        val calRemaining = calGoal - calConsumed
+        val calRatio = if (calGoal > 0) state.consumed.calories / state.goals.calories else 0f
         binding.progressCalories.ratio = calRatio
-        binding.tvCalories.text = "${state.consumed.calories.toInt()} / ${state.goals.calories.toInt()} kcal"
+        binding.tvCaloriesHero.text = calConsumed.toString()
+        binding.tvCaloriesRemaining.text = if (calRemaining >= 0) "$calRemaining remaining" else "${-calRemaining} over"
+        binding.tvCaloriesRemaining.setTextColor(
+            if (calRemaining >= 0)
+                requireContext().getColor(R.color.color_accent_green)
+            else
+                requireContext().getColor(R.color.color_accent_red)
+        )
+        binding.tvCaloriesGoalLabel.text = "/ ${calGoal} kcal goal"
+        // Keep hidden tv_calories in sync for any code that reads it
+        binding.tvCalories.text = "$calConsumed / $calGoal kcal"
 
         // Protein
         val protRatio = if (state.goals.proteinG > 0) state.consumed.proteinG / state.goals.proteinG else 0f

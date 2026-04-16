@@ -82,6 +82,9 @@ class WeightFragment : Fragment() {
     }
 
     private fun setupChart() {
+        val textSecondary = resources.getColor(R.color.color_text_secondary, null)
+        val borderColor  = resources.getColor(R.color.color_border, null)
+
         binding.lineChart.apply {
             description.isEnabled = false
             setTouchEnabled(true)
@@ -89,12 +92,15 @@ class WeightFragment : Fragment() {
             setScaleEnabled(true)
             setPinchZoom(false)
             setDrawGridBackground(false)
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
             legend.isEnabled = false
 
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 setDrawGridLines(false)
                 granularity = 1f
+                textColor = textSecondary
+                axisLineColor = borderColor
                 valueFormatter = object : ValueFormatter() {
                     private val fmt = DateTimeFormatter.ofPattern("MMM d")
                     override fun getFormattedValue(value: Float): String = try {
@@ -102,7 +108,12 @@ class WeightFragment : Fragment() {
                     } catch (e: Exception) { "" }
                 }
             }
-            axisLeft.setDrawGridLines(true)
+            axisLeft.apply {
+                setDrawGridLines(true)
+                gridColor = borderColor
+                textColor = textSecondary
+                axisLineColor = borderColor
+            }
             axisRight.isEnabled = false
         }
     }
@@ -121,13 +132,16 @@ class WeightFragment : Fragment() {
             return
         }
         val chartEntries = entries.map { Entry(it.date.toEpochDay().toFloat(), it.value) }
+        val accentGreen = resources.getColor(R.color.color_accent_green, null)
         val dataSet = LineDataSet(chartEntries, "Weight").apply {
-            color = resources.getColor(R.color.purple_500, null)
-            setCircleColor(resources.getColor(R.color.purple_500, null))
+            color = accentGreen
+            setCircleColor(accentGreen)
             lineWidth = 2f
             circleRadius = 3f
             setDrawValues(false)
             mode = LineDataSet.Mode.CUBIC_BEZIER
+            setDrawFilled(true)
+            fillColor = resources.getColor(R.color.color_accent_green_dim, null)
         }
         binding.lineChart.data = LineData(dataSet)
         binding.lineChart.invalidate()

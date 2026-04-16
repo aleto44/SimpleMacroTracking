@@ -5,30 +5,61 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardElevation="2dp"
-    app:cardCornerRadius="8dp">
+    app:cardBackgroundColor="@color/color_bg_surface"
+    app:cardElevation="0dp"
+    app:cardCornerRadius="12dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/color_border">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="14dp">
 
-        <TextView
-            android:id="@+id/tv_food_name"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_food_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textColor="@color/color_text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tv_food_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/color_text_secondary"
+                android:layout_marginTop="2dp" />
+
+        </LinearLayout>
+
+        <!-- Calorie count right-aligned -->
+        <TextView
+            android:id="@+id/tv_entry_calories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/color_accent_green"
             android:textStyle="bold"
-            android:textSize="15sp" />
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
 
+        <!-- Chevron hint -->
         <TextView
-            android:id="@+id/tv_food_details"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:alpha="0.7" />
+            android:text=" ›"
+            android:textColor="@color/color_text_disabled"
+            android:textSize="18sp" />
 
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
-

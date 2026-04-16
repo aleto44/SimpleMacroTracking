@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/color_bg_surface">
 
     <!-- Header row: food name + edit icon -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -12,10 +14,12 @@
         <TextView android:id="@+id/tv_food_name"
             android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="18sp" android:textStyle="bold" />
+            android:textSize="18sp" android:textStyle="bold"
+            android:textColor="@color/color_text_primary" />
         <ImageButton android:id="@+id/btn_edit_food"
             android:layout_width="40dp" android:layout_height="40dp"
             android:src="@drawable/ic_edit"
+            android:tint="@color/color_text_secondary"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Edit food" />
     </LinearLayout>
@@ -23,11 +27,14 @@
     <TextView android:id="@+id/tv_food_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="13sp" android:alpha="0.7"
+        android:textSize="13sp"
+        android:textColor="@color/color_text_secondary"
         android:layout_marginBottom="12dp" />
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Amount" android:textStyle="bold" android:layout_marginBottom="4dp" />
+        android:text="AMOUNT"
+        android:textAppearance="@style/TextAppearance.Macro.SectionLabel"
+        android:layout_marginBottom="4dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical"
@@ -35,30 +42,50 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            style="@style/Style.Macro.InputField">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_amount"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:inputType="numberDecimal"
+                android:textColor="@color/color_text_primary" />
         </com.google.android.material.textfield.TextInputLayout>
         <TextView android:id="@+id/tv_unit"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" android:textSize="14sp" />
+            android:layout_marginStart="8dp" android:textSize="14sp"
+            android:textColor="@color/color_text_secondary" />
     </LinearLayout>
 
+    <!-- Macro preview card -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/color_bg_elevated"
+        app:cardElevation="0dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/color_border"
+        app:cardCornerRadius="12dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="12dp">
+            android:orientation="vertical" android:padding="14dp">
             <TextView android:id="@+id/tv_preview_calories" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="Calories: 0" />
+                android:layout_height="wrap_content"
+                android:text="Calories: 0"
+                android:textColor="@color/color_text_primary"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tv_preview_protein" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="Protein: 0 g" />
+                android:layout_height="wrap_content"
+                android:text="Protein: 0 g"
+                android:textColor="@color/color_text_secondary"
+                android:layout_marginBottom="2dp" />
             <TextView android:id="@+id/tv_preview_carbs" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="Carbs: 0 g" />
+                android:layout_height="wrap_content"
+                android:text="Carbs: 0 g"
+                android:textColor="@color/color_text_secondary"
+                android:layout_marginBottom="2dp" />
             <TextView android:id="@+id/tv_preview_fat" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="Fat: 0 g" />
+                android:layout_height="wrap_content"
+                android:text="Fat: 0 g"
+                android:textColor="@color/color_text_secondary" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -66,12 +93,12 @@
         android:orientation="horizontal" android:gravity="end">
         <Button android:id="@+id/btn_cancel" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="Cancel"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Style.Macro.Button.Ghost"
             android:layout_marginEnd="8dp" />
         <Button android:id="@+id/btn_action" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="Add to Diary"
+            style="@style/Style.Macro.Button.Primary"
             android:enabled="false" />
     </LinearLayout>
 
 </LinearLayout>
-
