@@ -13,11 +13,13 @@ import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.WeightRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class SettingsUiState(
@@ -27,7 +29,9 @@ data class SettingsUiState(
     val fatGoal: Int = 65,
     val weightUnit: WeightUnit = WeightUnit.LB,
     val aiApiKey: String = "",
-    val isConverting: Boolean = false
+    val isConverting: Boolean = false,
+    val isTesting: Boolean = false,
+    val apiKeyTestResult: String? = null
 )
 
 @HiltViewModel
@@ -74,21 +78,40 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(aiApiKey = key) }
     }
 
-    fun testApiKey(onResult: (String) -> Unit) {
-        val key = settingsPrefs.aiApiKey
-        if (key.isBlank()) { onResult("No API key saved"); return }
+    fun testApiKey(keyFromField: String) {
+        val key = keyFromField.trim()
+        if (key.isBlank()) {
+            _uiState.update { it.copy(apiKeyTestResult = "Please enter an API key in the field first.") }
+            return
+        }
+        // Auto-save whatever is in the field so it persists
+        settingsPrefs.aiApiKey = key
+        _uiState.update { it.copy(aiApiKey = key) }
+        _uiState.update { it.copy(isTesting = true) }
         viewModelScope.launch {
-            try {
+            val message = try {
                 val request = GeminiRequest(
                     contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = "Reply with: OK"))))
                 )
                 val response = geminiApi.generateContent(key, request)
-                if (response.isSuccessful) onResult("✓ API key is valid")
-                else onResult("✗ Error: HTTP ${response.code()}")
+                when {
+                    response.isSuccessful -> "✓ API key is valid"
+                    response.code() == 429 -> "✓ API key is valid\n\n(Rate limit hit — this just means the free tier quota was briefly exceeded. Your key works fine.)"
+                    response.code() == 404 -> "✗ Model not found — the AI model may have been renamed or is unavailable"
+                    response.code() == 401 || response.code() == 403 -> "✗ Invalid or unauthorized API key"
+                    else -> "✗ Error: HTTP ${response.code()}"
+                }
             } catch (e: Exception) {
-                onResult("✗ Error: ${e.message}")
+                "✗ Error: ${e.message}"
+            }
+            withContext(Dispatchers.Main) {
+                _uiState.update { it.copy(apiKeyTestResult = message, isTesting = false) }
             }
         }
+    }
+
+    fun clearApiKeyTestResult() {
+        _uiState.update { it.copy(apiKeyTestResult = null) }
     }
 
     suspend fun getAllDiaryEntries(): List<DiaryEntryWithFood> = diaryRepository.getAllEntriesWithFood()

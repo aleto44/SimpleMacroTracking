@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -77,9 +78,7 @@ class SettingsFragment : Fragment() {
         }
 
         binding.btnTestApiKey.setOnClickListener {
-            viewModel.testApiKey { message ->
-                Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
-            }
+            viewModel.testApiKey(binding.etApiKey.text.toString())
         }
 
         binding.btnExportDiary.setOnClickListener {
@@ -113,6 +112,20 @@ class SettingsFragment : Fragment() {
                     binding.etApiKey.setText(state.aiApiKey)
                     binding.progressConverting.visibility =
                         if (state.isConverting) View.VISIBLE else View.GONE
+
+                    // Test button: show spinner text while in-flight, disable while testing
+                    binding.btnTestApiKey.isEnabled = !state.isTesting
+                    binding.btnTestApiKey.text = if (state.isTesting) "Testing…" else "Test"
+
+                    // Show result dialog when result arrives
+                    state.apiKeyTestResult?.let { message ->
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("API Key Test")
+                            .setMessage(message)
+                            .setPositiveButton("OK") { _, _ -> viewModel.clearApiKeyTestResult() }
+                            .setOnCancelListener { viewModel.clearApiKeyTestResult() }
+                            .show()
+                    }
                 }
             }
         }

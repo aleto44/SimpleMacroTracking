@@ -30,6 +30,9 @@
         <!-- Bottom sheet -->
         <item name="bottomSheetDialogTheme">@style/Theme.Macro.BottomSheet</item>
 
+        <!-- Alert dialogs -->
+        <item name="materialAlertDialogTheme">@style/Theme.Macro.AlertDialog</item>
+
         <!-- Chip -->
         <item name="chipStyle">@style/Style.Macro.Chip</item>
     </style>
@@ -68,6 +71,15 @@
         <item name="chipStrokeWidth">1dp</item>
         <item name="chipCornerRadius">20dp</item>
         <item name="checkedIconVisible">false</item>
+    </style>
+
+    <!-- ── Alert Dialog ── -->
+    <style name="Theme.Macro.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">@color/color_bg_surface</item>
+        <item name="colorOnSurface">@color/color_text_primary</item>
+        <item name="android:textColorPrimary">@color/color_text_primary</item>
+        <item name="android:textColorSecondary">@color/color_text_secondary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Style.Macro.Button.Primary</item>
     </style>
 
     <!-- ── Bottom Sheet theme ── -->
