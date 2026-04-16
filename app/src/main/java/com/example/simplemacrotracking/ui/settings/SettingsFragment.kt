@@ -64,7 +64,7 @@ class SettingsFragment : Fragment() {
             val carbs = binding.etCarbs.text.toString().toIntOrNull()   ?: return@setOnClickListener
             val fat  = binding.etFat.text.toString().toIntOrNull()      ?: return@setOnClickListener
             viewModel.saveGoals(cal, prot, carbs, fat)
-            Snackbar.make(binding.root, "Goals saved", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(requireView(), "Goals saved ✓", Snackbar.LENGTH_SHORT).show()
         }
 
         binding.rgWeightUnit.setOnCheckedChangeListener { _, checkedId ->
@@ -72,10 +72,6 @@ class SettingsFragment : Fragment() {
             viewModel.setWeightUnit(unit)
         }
 
-        binding.btnSaveApiKey.setOnClickListener {
-            viewModel.saveApiKey(binding.etApiKey.text.toString())
-            Snackbar.make(binding.root, "API key saved", Snackbar.LENGTH_SHORT).show()
-        }
 
         binding.btnTestApiKey.setOnClickListener {
             viewModel.testApiKey(binding.etApiKey.text.toString())
@@ -115,7 +111,7 @@ class SettingsFragment : Fragment() {
 
                     // Test button: show spinner text while in-flight, disable while testing
                     binding.btnTestApiKey.isEnabled = !state.isTesting
-                    binding.btnTestApiKey.text = if (state.isTesting) "Testing…" else "Test"
+                    binding.btnTestApiKey.text = if (state.isTesting) "Testing..." else "Test"
 
                     // Show result dialog when result arrives
                     state.apiKeyTestResult?.let { message ->

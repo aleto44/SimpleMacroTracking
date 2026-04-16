@@ -127,18 +127,11 @@
                 android:textColor="@color/color_text_primary" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginBottom="16dp">
-            <Button android:id="@+id/btn_save_api_key"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Save API Key"
-                style="@style/Style.Macro.Button.Primary"
-                android:layout_marginEnd="8dp" />
-            <Button android:id="@+id/btn_test_api_key"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Test"
-                style="@style/Style.Macro.Button.Ghost" />
-        </LinearLayout>
+        <Button android:id="@+id/btn_test_api_key"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Test"
+            style="@style/Style.Macro.Button.Primary"
+            android:layout_marginBottom="16dp" />
 
         <View android:layout_width="match_parent" android:layout_height="1dp"
             android:background="@color/color_border" android:layout_marginBottom="16dp" />

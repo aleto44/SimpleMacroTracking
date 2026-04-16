@@ -84,9 +84,6 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(apiKeyTestResult = "Please enter an API key in the field first.") }
             return
         }
-        // Auto-save whatever is in the field so it persists
-        settingsPrefs.aiApiKey = key
-        _uiState.update { it.copy(aiApiKey = key) }
         _uiState.update { it.copy(isTesting = true) }
         viewModelScope.launch {
             val message = try {
@@ -95,8 +92,18 @@ class SettingsViewModel @Inject constructor(
                 )
                 val response = geminiApi.generateContent(key, request)
                 when {
-                    response.isSuccessful -> "✓ API key is valid"
-                    response.code() == 429 -> "✓ API key is valid\n\n(Rate limit hit — this just means the free tier quota was briefly exceeded. Your key works fine.)"
+                    response.isSuccessful -> {
+                        // Save the key only on success
+                        settingsPrefs.aiApiKey = key
+                        _uiState.update { it.copy(aiApiKey = key) }
+                        "✓ API key is valid and saved"
+                    }
+                    response.code() == 429 -> {
+                        // Save the key on rate limit too (it's valid)
+                        settingsPrefs.aiApiKey = key
+                        _uiState.update { it.copy(aiApiKey = key) }
+                        "✓ API key is valid and saved\n\n(Rate limit hit — this just means the free tier quota was briefly exceeded. Your key works fine.)"
+                    }
                     response.code() == 404 -> "✗ Model not found — the AI model may have been renamed or is unavailable"
                     response.code() == 401 || response.code() == 403 -> "✗ Invalid or unauthorized API key"
                     else -> "✗ Error: HTTP ${response.code()}"
