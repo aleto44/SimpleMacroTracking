@@ -20,4 +20,10 @@
     <color name="color_text_primary">#FFFFFF</color>
     <color name="color_text_secondary">#888888</color>
     <color name="color_text_disabled">#444444</color>
+
+    <!-- ZXing Barcode Scanner -->
+    <color name="zxing_custom_viewfinder_mask">#60000000</color>
+    <color name="zxing_custom_result_view">#B000C805</color>
+    <color name="zxing_custom_viewfinder_laser">#00C805</color>
+    <color name="zxing_custom_possible_result_points">#C0FFFF00</color>
 </resources>

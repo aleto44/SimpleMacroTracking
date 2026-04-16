@@ -3,6 +3,7 @@ package com.example.simplemacrotracking.ui.entry
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +28,8 @@ class BarcodeEntryFragment : Fragment() {
     private val binding get() = _binding!!
 
     @Inject lateinit var foodRepository: FoodRepository
+
+    private var isProcessing = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -82,7 +85,21 @@ class BarcodeEntryFragment : Fragment() {
         binding.layoutScanning.visibility = View.VISIBLE
         binding.progressBar.visibility = View.GONE
         binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
-        startScan()
+
+        Log.d("BarcodeEntryFragment", "Initializing camera for barcode scanning")
+
+        // Start scanning
+        binding.barcodeView.decodeContinuous(BarcodeCallback { result ->
+            Log.d("BarcodeEntryFragment", "Barcode callback triggered: ${result?.text}")
+            if (result?.text != null && !isProcessing) {
+                isProcessing = true
+                binding.barcodeView.pause()
+                Log.d("BarcodeEntryFragment", "Barcode detected: ${result.text}")
+                handleBarcode(result.text)
+            }
+        })
+        binding.barcodeView.resume()
+        Log.d("BarcodeEntryFragment", "Camera initialized successfully")
     }
 
     private fun showPermissionDenied() {
@@ -90,32 +107,31 @@ class BarcodeEntryFragment : Fragment() {
         binding.layoutScanning.visibility = View.GONE
     }
 
-    private fun startScan() {
-        binding.barcodeView.resume()
-        binding.barcodeView.decodeSingle(BarcodeCallback { result ->
-            if (result?.text == null) return@BarcodeCallback
-            binding.barcodeView.pause()
-            handleBarcode(result.text)
-        })
-    }
 
     private fun handleBarcode(barcode: String) {
+        Log.d("BarcodeEntryFragment", "Handling barcode: $barcode")
         binding.tvScanStatus.text = "Looking up barcode…"
         binding.progressBar.visibility = View.VISIBLE
 
         viewLifecycleOwner.lifecycleScope.launch {
             when (val result = foodRepository.fetchByBarcode(barcode)) {
                 is NetworkResult.Success -> {
+                    Log.d("BarcodeEntryFragment", "Food item found: ${result.data.name}")
                     parentFragmentManager.setFragmentResult(
                         "food_saved",
                         bundleOf("foodItemId" to result.data.id)
                     )
                 }
                 is NetworkResult.Error -> {
+                    Log.e("BarcodeEntryFragment", "Error fetching barcode: ${result.message}")
+                    isProcessing = false
                     binding.progressBar.visibility = View.GONE
                     binding.tvScanStatus.text = "Error: ${result.message}. Tap to retry."
                     delay(3000)
-                    if (isAdded) startScan()
+                    if (isAdded) {
+                        binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
+                        binding.barcodeView.resume()
+                    }
                 }
                 is NetworkResult.Loading -> Unit
             }
