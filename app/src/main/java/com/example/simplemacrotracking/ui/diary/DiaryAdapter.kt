@@ -28,8 +28,8 @@ class DiaryAdapter(
             binding.tvFoodDetails.text = buildString {
                 append("%.0f %s".format(item.entry.actualAmount, item.entry.measurementType))
                 append(" · P %.0fg".format(protein))
-                if (fat > carbs) append(" · F %.0fg".format(fat))
-                else append(" · C %.0fg".format(carbs))
+                append(" · C %.0fg".format(carbs))
+                append(" · F %.0fg".format(fat))
             }
 
             binding.root.setOnClickListener { onItemClick(item) }
