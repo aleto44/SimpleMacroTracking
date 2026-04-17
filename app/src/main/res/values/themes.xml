@@ -77,6 +77,7 @@
     <style name="Theme.Macro.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="colorSurface">@color/color_bg_surface</item>
         <item name="colorOnSurface">@color/color_text_primary</item>
+        <item name="android:colorBackground">@color/color_bg_surface</item>
         <item name="android:textColorPrimary">@color/color_text_primary</item>
         <item name="android:textColorSecondary">@color/color_text_secondary</item>
         <item name="buttonBarPositiveButtonStyle">@style/Style.Macro.Button.Primary</item>

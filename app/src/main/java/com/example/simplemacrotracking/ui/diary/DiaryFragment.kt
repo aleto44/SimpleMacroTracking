@@ -1,10 +1,17 @@
 package com.example.simplemacrotracking.ui.diary
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -17,14 +24,20 @@ import com.example.simplemacrotracking.MainActivity
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.databinding.FragmentDiaryBinding
 import com.example.simplemacrotracking.ui.shared.SharedPickerViewModel
+import com.example.simplemacrotracking.util.VoskRecognitionManager
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.vosk.android.RecognitionListener
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class DiaryFragment : Fragment() {
@@ -34,6 +47,19 @@ class DiaryFragment : Fragment() {
     private val viewModel: DiaryViewModel by viewModels()
     private val sharedPickerViewModel: SharedPickerViewModel by activityViewModels()
     private lateinit var adapter: DiaryAdapter
+
+    @Inject lateinit var voskManager: VoskRecognitionManager
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var listeningDialog: AlertDialog? = null
+
+    // Mic permission launcher
+    private val micPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) startVosk()
+        else Toast.makeText(requireContext(), "Microphone permission denied.", Toast.LENGTH_SHORT).show()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -58,7 +84,7 @@ class DiaryFragment : Fragment() {
                 )
             },
             onItemLongClick = { ewf ->
-                AlertDialog.Builder(requireContext())
+                MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Remove from diary?")
                     .setMessage("Remove \"${ewf.food.name}\" from your log for ${ewf.entry.date}?")
                     .setNegativeButton("Cancel", null)
@@ -93,12 +119,158 @@ class DiaryFragment : Fragment() {
             (activity as MainActivity).selectFoodsTab()
         }
 
+        // Mic FAB — Vosk is always available (no Google required)
+        val micFab = (activity as MainActivity).getMicFab()
+        micFab.setOnClickListener { onMicClicked() }
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                viewModel.uiState.collect { state ->
+                    render(state)
+                    handleVoiceResult(state.voiceResult)
+                }
             }
         }
     }
+
+    // ── Voice entry ───────────────────────────────────────────────────────────
+
+    private fun onMicClicked() {
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED -> startVosk()
+            else -> micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    private fun startVosk() {
+        if (!voskManager.isModelReady) {
+            promptModelDownload()
+            return
+        }
+        launchListening()
+    }
+
+    private fun promptModelDownload() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Download Speech Model")
+            .setMessage("Voice entry uses an offline speech model (~40 MB, one-time download). No Google account needed — it runs entirely on your device.\n\nDownload now?")
+            .setPositiveButton("Download") { _, _ -> downloadModel() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun downloadModel() {
+        val progressDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Downloading speech model…")
+            .setMessage("Starting download…")
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            voskManager.downloadModel().collect { state ->
+                when (state) {
+                    is VoskRecognitionManager.DownloadState.Progress ->
+                        progressDialog.setMessage("Downloading offline speech model\n${state.percent}% complete")
+                    is VoskRecognitionManager.DownloadState.Done -> {
+                        progressDialog.dismiss()
+                        launchListening()
+                    }
+                    is VoskRecognitionManager.DownloadState.Error -> {
+                        progressDialog.dismiss()
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Download Failed")
+                            .setMessage("Could not download the speech model.\n\n${state.message}\n\nPlease check your internet connection and try again.")
+                            .setPositiveButton("Retry") { _, _ -> downloadModel() }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun launchListening() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Init model off main thread (takes ~1-2 s first time)
+            withContext(Dispatchers.IO) { voskManager.initModel() }
+
+            listeningDialog = MaterialAlertDialogBuilder(requireContext())
+                .setTitle("🎤 Listening…")
+                .setMessage("Say something like:\n\"add milk 100 grams\"")
+                .setNegativeButton("Cancel") { _, _ -> voskManager.cancel() }
+                .setCancelable(false)
+                .create()
+            listeningDialog?.show()
+
+            voskManager.startListening(object : RecognitionListener {
+                override fun onPartialResult(hypothesis: String?) {
+                    val partial = hypothesis?.let { voskManager.parsePartialResult(it) } ?: return
+                    mainHandler.post {
+                        listeningDialog?.setMessage(
+                            if (partial.isBlank()) "Say something like:\n\"add milk 100 grams\""
+                            else "Heard: \"$partial\""
+                        )
+                    }
+                }
+
+                override fun onResult(hypothesis: String?) {
+                    val text = hypothesis?.let { voskManager.parseResult(it) } ?: return
+                    if (text.isNotBlank()) {
+                        mainHandler.post {
+                            listeningDialog?.dismiss()
+                            listeningDialog = null
+                            voskManager.stopListening()
+                            viewModel.processVoiceInput(text)
+                        }
+                    }
+                }
+
+                override fun onFinalResult(hypothesis: String?) {
+                    val text = hypothesis?.let { voskManager.parseResult(it) } ?: ""
+                    mainHandler.post {
+                        listeningDialog?.dismiss()
+                        listeningDialog = null
+                        if (text.isNotBlank()) viewModel.processVoiceInput(text)
+                    }
+                }
+
+                override fun onError(e: Exception?) {
+                    mainHandler.post {
+                        listeningDialog?.dismiss()
+                        listeningDialog = null
+                        Toast.makeText(requireContext(), "Recognition error: ${e?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onTimeout() {
+                    mainHandler.post {
+                        listeningDialog?.dismiss()
+                        listeningDialog = null
+                        Toast.makeText(requireContext(), "Listening timed out. Please try again.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
+        }
+    }
+
+    private fun handleVoiceResult(result: VoiceResult) {
+        when (result) {
+            is VoiceResult.Idle -> Unit
+            is VoiceResult.Success -> {
+                val msg = "Added ${result.amount.toInt()} ${result.unit} of ${result.foodName}"
+                Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
+                viewModel.clearVoiceResult()
+            }
+            is VoiceResult.NoMatch -> {
+                Snackbar.make(binding.root, result.reason, Snackbar.LENGTH_LONG).show()
+                viewModel.clearVoiceResult()
+            }
+        }
+    }
+
+    // ── Rendering ─────────────────────────────────────────────────────────────
 
     private val dateFormatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy", Locale.getDefault())
 
@@ -162,6 +334,9 @@ class DiaryFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        listeningDialog?.dismiss()
+        listeningDialog = null
+        voskManager.cancel()
         super.onDestroyView()
         _binding = null
     }

@@ -95,6 +95,8 @@ dependencies {
     implementation(libs.mpandroidchart)
     // Jetpack Security (EncryptedSharedPreferences)
     implementation(libs.androidx.security.crypto)
+    // Vosk offline speech recognition (no Google dependency)
+    implementation("com.alphacephei:vosk-android:0.3.47")
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

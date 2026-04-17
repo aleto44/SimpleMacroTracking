@@ -20,6 +20,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = uri("https://jitpack.io") }  // required for MPAndroidChart
+        maven { url = uri("https://alphacephei.com/maven/") } // Vosk offline speech recognition
     }
 }
 
