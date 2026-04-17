@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.example.simplemacrotracking.BuildConfig
 import com.example.simplemacrotracking.data.repository.FoodRepository
 import com.example.simplemacrotracking.databinding.FragmentBarcodeEntryBinding
 import com.example.simplemacrotracking.util.NetworkResult
@@ -96,23 +97,23 @@ class BarcodeEntryFragment : Fragment() {
         binding.progressBar.visibility = View.GONE
         binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
 
-        Log.d("BarcodeEntryFragment", "Initializing camera for barcode scanning")
+        if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Initializing camera for barcode scanning")
 
         // Start scanning (only register callback once)
         if (!isScannerInitialized) {
             isScannerInitialized = true
             binding.barcodeView.decodeContinuous(BarcodeCallback { result ->
-                Log.d("BarcodeEntryFragment", "Barcode callback triggered: ${result?.text}")
+                if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Barcode callback triggered: ${result?.text}")
                 if (result?.text != null && !isProcessing) {
                     isProcessing = true
                     binding.barcodeView.pause()
-                    Log.d("BarcodeEntryFragment", "Barcode detected: ${result.text}")
+                    if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Barcode detected: ${result.text}")
                     handleBarcode(result.text)
                 }
             })
         }
         binding.barcodeView.resume()
-        Log.d("BarcodeEntryFragment", "Camera initialized successfully")
+        if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Camera initialized successfully")
     }
 
     private fun showPermissionDenied() {
@@ -129,7 +130,7 @@ class BarcodeEntryFragment : Fragment() {
 
 
     private fun handleBarcode(barcode: String) {
-        Log.d("BarcodeEntryFragment", "Handling barcode: $barcode")
+        if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Handling barcode: $barcode")
 
         // Fast offline check before hitting the network
         if (!networkUtils.isOnline()) {
@@ -137,7 +138,7 @@ class BarcodeEntryFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 val cached = foodRepository.getFoodItemByBarcode(barcode)
                 if (cached != null) {
-                    Log.d("BarcodeEntryFragment", "Offline hit from cache: ${cached.name}")
+                        if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Offline hit from cache: ${cached.name}")
                     isProcessing = false
                     parentFragmentManager.setFragmentResult(
                         "food_saved",
@@ -159,7 +160,7 @@ class BarcodeEntryFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             when (val result = foodRepository.fetchByBarcode(barcode)) {
                 is NetworkResult.Success -> {
-                    Log.d("BarcodeEntryFragment", "Food item found: ${result.data.name}")
+                    if (BuildConfig.DEBUG) Log.d("BarcodeEntryFragment", "Food item found: ${result.data.name}")
                     isProcessing = false
                     parentFragmentManager.setFragmentResult(
                         "food_saved",
@@ -167,7 +168,7 @@ class BarcodeEntryFragment : Fragment() {
                     )
                 }
                 is NetworkResult.Error -> {
-                    Log.e("BarcodeEntryFragment", "Error fetching barcode: ${result.message}")
+                    if (BuildConfig.DEBUG) Log.e("BarcodeEntryFragment", "Error fetching barcode: ${result.message}")
                     isProcessing = false
                     binding.progressBar.visibility = View.GONE
                     if (result.message.contains("internet", ignoreCase = true) ||

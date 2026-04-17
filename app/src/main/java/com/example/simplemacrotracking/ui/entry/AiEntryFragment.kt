@@ -9,6 +9,7 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.simplemacrotracking.BuildConfig
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.data.model.enums.FoodSource
@@ -98,7 +99,7 @@ class AiEntryFragment : Fragment() {
                     val text = response.body()?.candidates
                         ?.firstOrNull()?.content?.parts?.firstOrNull()?.text
                     if (text != null) {
-                        Log.d("AiEntryFragment", "AI Response: $text")
+                        if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "AI Response: $text")
                         parseAndShowConfirmation(text)
                     } else {
                         showError("Empty response from AI")
@@ -107,10 +108,10 @@ class AiEntryFragment : Fragment() {
                     showError("API error: ${response.code()}")
                 }
             } catch (e: java.io.IOException) {
-                Log.e("AiEntryFragment", "Network error calling Gemini API", e)
+                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Network error calling Gemini API", e)
                 showError("No internet connection. Please check your connection and try again.")
             } catch (e: Exception) {
-                Log.e("AiEntryFragment", "Error calling Gemini API", e)
+                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Error calling Gemini API", e)
                 showError(e.message ?: "Unknown error")
             }
         }
@@ -119,7 +120,7 @@ class AiEntryFragment : Fragment() {
     private fun parseAndShowConfirmation(text: String) {
         try {
             val json = extractJson(text)
-            Log.d("AiEntryFragment", "Extracted JSON: $json")
+            if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "Extracted JSON: $json")
             val obj = JSONObject(json)
             binding.layoutLoading.visibility = View.GONE
             binding.layoutPrompt.visibility = View.GONE
@@ -135,18 +136,18 @@ class AiEntryFragment : Fragment() {
             binding.etConfirmAmount.setText("%.0f".format(obj.optDouble("amount", 1.0)))
             binding.etConfirmUnit.setText(obj.optString("unit", "serving"))
         } catch (e: Exception) {
-            Log.e("AiEntryFragment", "Error parsing AI response", e)
+            if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Error parsing AI response", e)
             showError("Could not parse AI response: ${e.message}")
         }
     }
 
     private fun extractJson(text: String): String {
-        Log.d("AiEntryFragment", "Attempting to extract JSON from text (length: ${text.length})")
+        if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "Attempting to extract JSON from text (length: ${text.length})")
         try {
             // Strip markdown fences if present
             val fencedPattern = Regex("```(?:json)?\\s*(.*)\\s*```", RegexOption.DOT_MATCHES_ALL)
             fencedPattern.find(text)?.let {
-                Log.d("AiEntryFragment", "Found markdown fences")
+                if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "Found markdown fences")
                 return it.groupValues[1].trim()
             }
             // Find raw JSON object - look for first { to matching }
@@ -160,17 +161,17 @@ class AiEntryFragment : Fragment() {
                             depth--
                             if (depth == 0) {
                                 val extracted = text.substring(firstBrace, i + 1)
-                                Log.d("AiEntryFragment", "Extracted JSON by brace matching")
+                                if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "Extracted JSON by brace matching")
                                 return extracted
                             }
                         }
                     }
                 }
             }
-            Log.d("AiEntryFragment", "No JSON pattern found, returning original text")
+            if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "No JSON pattern found, returning original text")
             return text
         } catch (e: Exception) {
-            Log.e("AiEntryFragment", "Error in extractJson", e)
+            if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Error in extractJson", e)
             return text
         }
     }

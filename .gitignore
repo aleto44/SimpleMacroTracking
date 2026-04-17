@@ -58,8 +58,8 @@ proguard/
 # Keystore / signing files
 # Uncomment if you do NOT want to commit these:
 # -------------------------------------------------------
-#*.jks
-#*.keystore
+*.jks
+*.keystore
 
 # -------------------------------------------------------
 # Google Services (contains API keys — keep private!)

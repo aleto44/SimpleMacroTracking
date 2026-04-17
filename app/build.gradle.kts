@@ -54,6 +54,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     // Room: export schema JSON so future migrations can be auto-generated
@@ -92,6 +93,8 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     // MPAndroidChart
     implementation(libs.mpandroidchart)
+    // Jetpack Security (EncryptedSharedPreferences)
+    implementation(libs.androidx.security.crypto)
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
