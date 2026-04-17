@@ -14,9 +14,6 @@
         tools:layout="@layout/fragment_diary">
 
         <action
-            android:id="@+id/action_diary_to_foodDatabase"
-            app:destination="@id/foodDatabaseFragment" />
-        <action
             android:id="@+id/action_diary_to_itemActionSheet"
             app:destination="@id/itemActionSheet" />
     </fragment>

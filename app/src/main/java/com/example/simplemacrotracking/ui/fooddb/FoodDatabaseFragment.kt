@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +23,7 @@ import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.databinding.FragmentFoodDatabaseBinding
 import com.example.simplemacrotracking.databinding.ItemFoodBinding
+import com.example.simplemacrotracking.ui.shared.SharedPickerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -31,9 +33,11 @@ class FoodDatabaseFragment : Fragment() {
     private var _binding: FragmentFoodDatabaseBinding? = null
     private val binding get() = _binding!!
     private val viewModel: FoodDatabaseViewModel by viewModels()
+    private val sharedPickerViewModel: SharedPickerViewModel by activityViewModels()
 
-    private val pickerMode: Boolean by lazy { arguments?.getBoolean("pickerMode", false) ?: false }
-    private val targetDate: String? by lazy { arguments?.getString("targetDate") }
+    // Picker state driven by SharedPickerViewModel (from Diary FAB) or fragment args (legacy)
+    private var pickerMode: Boolean = false
+    private var targetDate: String? = null
 
     private lateinit var adapter: FoodAdapter
 
@@ -46,6 +50,17 @@ class FoodDatabaseFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Check for a picker request from the Diary FAB (takes priority over fragment args)
+        val request = sharedPickerViewModel.pickerRequest.value
+        if (request != null) {
+            pickerMode = true
+            targetDate = request.targetDate
+            sharedPickerViewModel.consumeRequest()
+        } else {
+            pickerMode = arguments?.getBoolean("pickerMode", false) ?: false
+            targetDate = arguments?.getString("targetDate")
+        }
 
         // Update toolbar title in picker mode
         if (pickerMode) {

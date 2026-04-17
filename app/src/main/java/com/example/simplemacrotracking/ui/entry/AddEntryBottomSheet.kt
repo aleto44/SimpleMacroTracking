@@ -54,10 +54,8 @@ class AddEntryBottomSheet : BottomSheetDialogFragment() {
             }
         }.attach()
 
-        // Open on Manual tab if editing
-        if (editFoodId > 0) {
-            binding.viewPager.setCurrentItem(1, false)
-        }
+        // Always default to Manual tab; stay there when editing too
+        binding.viewPager.setCurrentItem(1, false)
 
         // Disable swipe on barcode tab to avoid accidental dismissal during camera
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {

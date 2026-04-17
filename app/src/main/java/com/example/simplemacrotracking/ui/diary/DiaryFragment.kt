@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.simplemacrotracking.MainActivity
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.databinding.FragmentDiaryBinding
+import com.example.simplemacrotracking.ui.shared.SharedPickerViewModel
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -30,6 +32,7 @@ class DiaryFragment : Fragment() {
     private var _binding: FragmentDiaryBinding? = null
     private val binding get() = _binding!!
     private val viewModel: DiaryViewModel by viewModels()
+    private val sharedPickerViewModel: SharedPickerViewModel by activityViewModels()
     private lateinit var adapter: DiaryAdapter
 
     override fun onCreateView(
@@ -86,13 +89,8 @@ class DiaryFragment : Fragment() {
         }
 
         (activity as MainActivity).getFab().setOnClickListener {
-            findNavController().navigate(
-                R.id.action_diary_to_foodDatabase,
-                bundleOf(
-                    "pickerMode" to true,
-                    "targetDate" to viewModel.uiState.value.date.toString()
-                )
-            )
+            sharedPickerViewModel.requestPicker(viewModel.uiState.value.date.toString())
+            (activity as MainActivity).selectFoodsTab()
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

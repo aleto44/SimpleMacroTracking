@@ -26,7 +26,9 @@ class DiaryAdapter(
             binding.tvFoodName.text = item.food.name
             binding.tvEntryCalories.text = "%.0f kcal".format(calories)
             binding.tvFoodDetails.text = buildString {
-                append("%.0f %s".format(item.entry.actualAmount, item.entry.measurementType))
+                val amt = item.entry.actualAmount
+                val amtStr = if (amt == kotlin.math.floor(amt.toDouble()).toFloat()) "%.0f".format(amt) else "%.1f".format(amt)
+                append("$amtStr %s".format(item.entry.measurementType))
                 append(" · P %.0fg".format(protein))
                 append(" · C %.0fg".format(carbs))
                 append(" · F %.0fg".format(fat))

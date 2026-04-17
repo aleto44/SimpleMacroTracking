@@ -76,9 +76,10 @@ class AiEntryFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             val prompt = """
-                Estimate the nutritional content of: "$description"
-                Respond ONLY with a single JSON object (no markdown fences, no extra text):
-                {"name":"...","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"amount":0,"unit":"g"}
+                Estimate nutrition for: "$description"
+                unit/amount rules: use exact unit+amount if specified (e.g. "200g" → unit="g", amount=200); simple ingredients default to "g"; named dishes/restaurant items use a natural unit (e.g. "bowl","slice","6 piece"), amount=1; countable items use the item as unit (e.g. "egg"), amount=count.
+                name/brand rules: "name" = concise item only (e.g. "Chicken McNuggets"); "brand" = restaurant/brand or null.
+                Respond ONLY with JSON (no markdown): {"name":"...","brand":null,"calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"amount":0,"unit":"..."}
             """.trimIndent()
 
             try {
@@ -115,6 +116,8 @@ class AiEntryFragment : Fragment() {
             binding.layoutConfirmation.visibility = View.VISIBLE
 
             binding.etConfirmName.setText(obj.optString("name", "AI Estimate"))
+            val brand = obj.optString("brand", "").takeIf { it.isNotBlank() && it != "null" }
+            binding.etConfirmBrand.setText(brand ?: "")
             binding.etConfirmCalories.setText("%.0f".format(obj.optDouble("calories", 0.0)))
             binding.etConfirmProtein.setText("%.1f".format(obj.optDouble("protein_g", 0.0)))
             binding.etConfirmCarbs.setText("%.1f".format(obj.optDouble("carbs_g", 0.0)))
@@ -170,6 +173,7 @@ class AiEntryFragment : Fragment() {
 
     private fun saveConfirmedFood() {
         val name = binding.etConfirmName.text.toString().trim().ifBlank { "AI Estimate" }
+        val brand = binding.etConfirmBrand.text.toString().trim().ifBlank { null }
         val calories = binding.etConfirmCalories.text.toString().toFloatOrNull() ?: 0f
         val proteinG = binding.etConfirmProtein.text.toString().toFloatOrNull() ?: 0f
         val carbsG = binding.etConfirmCarbs.text.toString().toFloatOrNull() ?: 0f
@@ -179,7 +183,7 @@ class AiEntryFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             val food = FoodItem(
-                name = name, baseAmount = amount, measurementType = unit,
+                name = name, brand = brand, baseAmount = amount, measurementType = unit,
                 calories = calories, proteinG = proteinG, carbsG = carbsG, fatG = fatG,
                 source = FoodSource.AI
             )

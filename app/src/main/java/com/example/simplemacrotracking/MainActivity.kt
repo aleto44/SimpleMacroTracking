@@ -41,4 +41,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getFab(): FloatingActionButton = binding.fab
+
+    fun selectFoodsTab() {
+        binding.bottomNav.selectedItemId = R.id.foodDatabaseFragment
+    }
 }
