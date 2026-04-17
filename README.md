@@ -11,13 +11,7 @@
 
 **Open source. No account. No ads. Your data never leaves your phone.**
 
-A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics done well.
-
----
-
-## Screenshots
-<img width="548" height="1051" alt="image" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" />
-
+A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.
 
 ---
 
@@ -69,5 +63,15 @@ Security      EncryptedSharedPreferences (AES-256)
 ## License
 
 Open source -- do whatever you want with it.
+
+---
+
+## Screenshots
+<img width="548" height="1051" alt="image" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" />
+<img width="559" height="815" alt="image" src="https://github.com/user-attachments/assets/9fdb264c-e3c8-4cd8-a2e9-5b3dc8eda213" />
+<img width="555" height="1093" alt="image" src="https://github.com/user-attachments/assets/688baa85-767b-405e-83c0-e0876f9e4f4c" />
+<img width="565" height="1060" alt="image" src="https://github.com/user-attachments/assets/a7966402-78a1-40d8-a5a1-a3205ac5dc51" />
+
+
 
 
