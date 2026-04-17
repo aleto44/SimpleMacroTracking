@@ -68,33 +68,28 @@ Open source -- do whatever you want with it.
 
 ## Screenshots
 
----
-Main Diary Screen
-
-<img width="548" height="1051" alt="image" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" />
-
----
-
-New Food Entry into local DataBase
-
-<img width="559" height="815" alt="image" src="https://github.com/user-attachments/assets/9fdb264c-e3c8-4cd8-a2e9-5b3dc8eda213" />
-
----
-
-Weight Logging
-
-<img width="555" height="1093" alt="image" src="https://github.com/user-attachments/assets/688baa85-767b-405e-83c0-e0876f9e4f4c" />
-
----
-
-Settings
-
-<img width="565" height="1060" alt="image" src="https://github.com/user-attachments/assets/a7966402-78a1-40d8-a5a1-a3205ac5dc51" />
-
----
-AI
-
-<img width="563" height="400" alt="image" src="https://github.com/user-attachments/assets/89c370c8-5f95-4694-8ed1-72932a9da706" />
+<table>
+  <tr>
+    <td align="center"><b>Daily Diary</b></td>
+    <td align="center"><b>New Food Entry</b></td>
+    <td align="center"><b>Weight Logging</b></td>
+  </tr>
+  <tr>
+    <td><img width="220" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" /></td>
+    <td><img width="220" src="https://github.com/user-attachments/assets/9fdb264c-e3c8-4cd8-a2e9-5b3dc8eda213" /></td>
+    <td><img width="220" src="https://github.com/user-attachments/assets/688baa85-767b-405e-83c0-e0876f9e4f4c" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Settings</b></td>
+    <td align="center"><b>AI Entry</b></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><img width="220" src="https://github.com/user-attachments/assets/a7966402-78a1-40d8-a5a1-a3205ac5dc51" /></td>
+    <td><img width="220" src="https://github.com/user-attachments/assets/89c370c8-5f95-4694-8ed1-72932a9da706" /></td>
+    <td></td>
+  </tr>
+</table>
 
 
 
