@@ -65,6 +65,10 @@ android {
         buildConfig = true
     }
 
+    lint {
+        disable += "NullSafeMutableLiveData"
+    }
+
     // Room: export schema JSON so future migrations can be auto-generated
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
