@@ -62,6 +62,7 @@ class BarcodeEntryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (hasCameraPermission() && binding.layoutScanning.visibility == View.VISIBLE) {
+            isProcessing = false
             binding.barcodeView.resume()
         }
     }
@@ -80,6 +81,8 @@ class BarcodeEntryFragment : Fragment() {
         else showPermissionDenied()
     }
 
+    private var isScannerInitialized = false
+
     private fun showScanningLayout() {
         binding.layoutPermissionDenied.visibility = View.GONE
         binding.layoutScanning.visibility = View.VISIBLE
@@ -88,16 +91,19 @@ class BarcodeEntryFragment : Fragment() {
 
         Log.d("BarcodeEntryFragment", "Initializing camera for barcode scanning")
 
-        // Start scanning
-        binding.barcodeView.decodeContinuous(BarcodeCallback { result ->
-            Log.d("BarcodeEntryFragment", "Barcode callback triggered: ${result?.text}")
-            if (result?.text != null && !isProcessing) {
-                isProcessing = true
-                binding.barcodeView.pause()
-                Log.d("BarcodeEntryFragment", "Barcode detected: ${result.text}")
-                handleBarcode(result.text)
-            }
-        })
+        // Start scanning (only register callback once)
+        if (!isScannerInitialized) {
+            isScannerInitialized = true
+            binding.barcodeView.decodeContinuous(BarcodeCallback { result ->
+                Log.d("BarcodeEntryFragment", "Barcode callback triggered: ${result?.text}")
+                if (result?.text != null && !isProcessing) {
+                    isProcessing = true
+                    binding.barcodeView.pause()
+                    Log.d("BarcodeEntryFragment", "Barcode detected: ${result.text}")
+                    handleBarcode(result.text)
+                }
+            })
+        }
         binding.barcodeView.resume()
         Log.d("BarcodeEntryFragment", "Camera initialized successfully")
     }
@@ -117,6 +123,7 @@ class BarcodeEntryFragment : Fragment() {
             when (val result = foodRepository.fetchByBarcode(barcode)) {
                 is NetworkResult.Success -> {
                     Log.d("BarcodeEntryFragment", "Food item found: ${result.data.name}")
+                    isProcessing = false
                     parentFragmentManager.setFragmentResult(
                         "food_saved",
                         bundleOf("foodItemId" to result.data.id)
