@@ -24,15 +24,12 @@ import com.example.simplemacrotracking.MainActivity
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.databinding.FragmentDiaryBinding
 import com.example.simplemacrotracking.ui.shared.SharedPickerViewModel
-import com.example.simplemacrotracking.util.VoskRecognitionManager
+import com.example.simplemacrotracking.util.SpeechRecognitionManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.vosk.android.RecognitionListener
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -48,7 +45,7 @@ class DiaryFragment : Fragment() {
     private val sharedPickerViewModel: SharedPickerViewModel by activityViewModels()
     private lateinit var adapter: DiaryAdapter
 
-    @Inject lateinit var voskManager: VoskRecognitionManager
+    @Inject lateinit var speechManager: SpeechRecognitionManager
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var listeningDialog: AlertDialog? = null
@@ -57,7 +54,7 @@ class DiaryFragment : Fragment() {
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) startVosk()
+        if (granted) startSpeechListening()
         else Toast.makeText(requireContext(), "Microphone permission denied.", Toast.LENGTH_SHORT).show()
     }
 
@@ -138,121 +135,59 @@ class DiaryFragment : Fragment() {
     private fun onMicClicked() {
         when {
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
-                    == PackageManager.PERMISSION_GRANTED -> startVosk()
+                    == PackageManager.PERMISSION_GRANTED -> startSpeechListening()
             else -> micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
-    private fun startVosk() {
-        if (!voskManager.isModelReady) {
-            promptModelDownload()
+    private fun startSpeechListening() {
+        if (!speechManager.isAvailable()) {
+            Toast.makeText(requireContext(), "Speech recognition is not available on this device.", Toast.LENGTH_LONG).show()
             return
         }
-        launchListening()
-    }
 
-    private fun promptModelDownload() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Download Speech Model")
-            .setMessage("Voice entry uses an offline speech model (~40 MB, one-time download). No Google account needed — it runs entirely on your device.\n\nDownload now?")
-            .setPositiveButton("Download") { _, _ -> downloadModel() }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun downloadModel() {
-        val progressDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Downloading speech model…")
-            .setMessage("Starting download…")
+        listeningDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("🎤 Listening…")
+            .setMessage("Say something like:\n\"add milk 100 grams\"")
+            .setNegativeButton("Cancel") { _, _ -> speechManager.cancel() }
             .setCancelable(false)
             .create()
-        progressDialog.show()
+        listeningDialog?.show()
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            voskManager.downloadModel().collect { state ->
-                when (state) {
-                    is VoskRecognitionManager.DownloadState.Progress ->
-                        progressDialog.setMessage("Downloading offline speech model\n${state.percent}% complete")
-                    is VoskRecognitionManager.DownloadState.Done -> {
-                        progressDialog.dismiss()
-                        launchListening()
-                    }
-                    is VoskRecognitionManager.DownloadState.Error -> {
-                        progressDialog.dismiss()
-                        MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("Download Failed")
-                            .setMessage("Could not download the speech model.\n\n${state.message}\n\nPlease check your internet connection and try again.")
-                            .setPositiveButton("Retry") { _, _ -> downloadModel() }
-                            .setNegativeButton("Cancel", null)
-                            .show()
-                    }
+        speechManager.startListening(object : SpeechRecognitionManager.Listener {
+            override fun onPartialResult(text: String) {
+                mainHandler.post {
+                    listeningDialog?.setMessage(
+                        if (text.isBlank()) "Say something like:\n\"add milk 100 grams\""
+                        else "Heard: \"$text\""
+                    )
                 }
             }
-        }
-    }
 
-    private fun launchListening() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Init model off main thread (takes ~1-2 s first time)
-            withContext(Dispatchers.IO) { voskManager.initModel() }
-
-            listeningDialog = MaterialAlertDialogBuilder(requireContext())
-                .setTitle("🎤 Listening…")
-                .setMessage("Say something like:\n\"add milk 100 grams\"")
-                .setNegativeButton("Cancel") { _, _ -> voskManager.cancel() }
-                .setCancelable(false)
-                .create()
-            listeningDialog?.show()
-
-            voskManager.startListening(object : RecognitionListener {
-                override fun onPartialResult(hypothesis: String?) {
-                    val partial = hypothesis?.let { voskManager.parsePartialResult(it) } ?: return
-                    mainHandler.post {
-                        listeningDialog?.setMessage(
-                            if (partial.isBlank()) "Say something like:\n\"add milk 100 grams\""
-                            else "Heard: \"$partial\""
-                        )
-                    }
+            override fun onResult(text: String) {
+                mainHandler.post {
+                    listeningDialog?.dismiss()
+                    listeningDialog = null
+                    if (text.isNotBlank()) viewModel.processVoiceInput(text)
                 }
+            }
 
-                override fun onResult(hypothesis: String?) {
-                    val text = hypothesis?.let { voskManager.parseResult(it) } ?: return
-                    if (text.isNotBlank()) {
-                        mainHandler.post {
-                            listeningDialog?.dismiss()
-                            listeningDialog = null
-                            voskManager.stopListening()
-                            viewModel.processVoiceInput(text)
-                        }
-                    }
+            override fun onError(message: String) {
+                mainHandler.post {
+                    listeningDialog?.dismiss()
+                    listeningDialog = null
+                    Toast.makeText(requireContext(), "Recognition error: $message", Toast.LENGTH_SHORT).show()
                 }
+            }
 
-                override fun onFinalResult(hypothesis: String?) {
-                    val text = hypothesis?.let { voskManager.parseResult(it) } ?: ""
-                    mainHandler.post {
-                        listeningDialog?.dismiss()
-                        listeningDialog = null
-                        if (text.isNotBlank()) viewModel.processVoiceInput(text)
-                    }
+            override fun onTimeout() {
+                mainHandler.post {
+                    listeningDialog?.dismiss()
+                    listeningDialog = null
+                    Toast.makeText(requireContext(), "Listening timed out. Please try again.", Toast.LENGTH_SHORT).show()
                 }
-
-                override fun onError(e: Exception?) {
-                    mainHandler.post {
-                        listeningDialog?.dismiss()
-                        listeningDialog = null
-                        Toast.makeText(requireContext(), "Recognition error: ${e?.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                override fun onTimeout() {
-                    mainHandler.post {
-                        listeningDialog?.dismiss()
-                        listeningDialog = null
-                        Toast.makeText(requireContext(), "Listening timed out. Please try again.", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            })
-        }
+            }
+        })
     }
 
     private fun handleVoiceResult(result: VoiceResult) {
@@ -336,7 +271,7 @@ class DiaryFragment : Fragment() {
     override fun onDestroyView() {
         listeningDialog?.dismiss()
         listeningDialog = null
-        voskManager.cancel()
+        speechManager.cancel()
         super.onDestroyView()
         _binding = null
     }
