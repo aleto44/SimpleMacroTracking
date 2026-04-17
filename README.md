@@ -16,6 +16,7 @@ A lightweight Android app for tracking daily nutrition and weight — built for 
 ---
 
 ## Screenshots
+<img width="548" height="1051" alt="image" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" />
 
 
 ---
