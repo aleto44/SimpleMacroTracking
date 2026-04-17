@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.simplemacrotracking.data.repository.FoodRepository
 import com.example.simplemacrotracking.databinding.FragmentBarcodeEntryBinding
 import com.example.simplemacrotracking.util.NetworkResult
+import com.example.simplemacrotracking.util.NetworkUtils
 import com.journeyapps.barcodescanner.BarcodeCallback
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -28,6 +29,7 @@ class BarcodeEntryFragment : Fragment() {
     private val binding get() = _binding!!
 
     @Inject lateinit var foodRepository: FoodRepository
+    @Inject lateinit var networkUtils: NetworkUtils
 
     private var isProcessing = false
 
@@ -55,6 +57,10 @@ class BarcodeEntryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.btnGrantPermission.setOnClickListener {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+        binding.btnRetryOffline.setOnClickListener {
+            binding.layoutOffline.visibility = View.GONE
+            checkCameraPermission()
         }
         checkCameraPermission()
     }
@@ -85,6 +91,7 @@ class BarcodeEntryFragment : Fragment() {
 
     private fun showScanningLayout() {
         binding.layoutPermissionDenied.visibility = View.GONE
+        binding.layoutOffline.visibility = View.GONE
         binding.layoutScanning.visibility = View.VISIBLE
         binding.progressBar.visibility = View.GONE
         binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
@@ -111,11 +118,41 @@ class BarcodeEntryFragment : Fragment() {
     private fun showPermissionDenied() {
         binding.layoutPermissionDenied.visibility = View.VISIBLE
         binding.layoutScanning.visibility = View.GONE
+        binding.layoutOffline.visibility = View.GONE
+    }
+
+    private fun showOffline() {
+        binding.layoutOffline.visibility = View.VISIBLE
+        binding.layoutScanning.visibility = View.GONE
+        binding.layoutPermissionDenied.visibility = View.GONE
     }
 
 
     private fun handleBarcode(barcode: String) {
         Log.d("BarcodeEntryFragment", "Handling barcode: $barcode")
+
+        // Fast offline check before hitting the network
+        if (!networkUtils.isOnline()) {
+            // Check local cache first — user may have scanned this barcode before
+            viewLifecycleOwner.lifecycleScope.launch {
+                val cached = foodRepository.getFoodItemByBarcode(barcode)
+                if (cached != null) {
+                    Log.d("BarcodeEntryFragment", "Offline hit from cache: ${cached.name}")
+                    isProcessing = false
+                    parentFragmentManager.setFragmentResult(
+                        "food_saved",
+                        bundleOf("foodItemId" to cached.id)
+                    )
+                } else {
+                    isProcessing = false
+                    binding.progressBar.visibility = View.GONE
+                    binding.barcodeView.pause()
+                    showOffline()
+                }
+            }
+            return
+        }
+
         binding.tvScanStatus.text = "Looking up barcode…"
         binding.progressBar.visibility = View.VISIBLE
 
@@ -133,11 +170,17 @@ class BarcodeEntryFragment : Fragment() {
                     Log.e("BarcodeEntryFragment", "Error fetching barcode: ${result.message}")
                     isProcessing = false
                     binding.progressBar.visibility = View.GONE
-                    binding.tvScanStatus.text = "Error: ${result.message}. Tap to retry."
-                    delay(3000)
-                    if (isAdded) {
-                        binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
-                        binding.barcodeView.resume()
+                    if (result.message.contains("internet", ignoreCase = true) ||
+                        result.message.contains("connect", ignoreCase = true)) {
+                        binding.barcodeView.pause()
+                        showOffline()
+                    } else {
+                        binding.tvScanStatus.text = "❌ ${result.message}. Tap to retry."
+                        delay(3000)
+                        if (isAdded) {
+                            binding.tvScanStatus.text = "Point camera at a barcode to scan automatically"
+                            binding.barcodeView.resume()
+                        }
                     }
                 }
                 is NetworkResult.Loading -> Unit

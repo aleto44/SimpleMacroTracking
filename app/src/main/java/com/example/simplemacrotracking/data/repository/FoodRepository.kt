@@ -5,6 +5,7 @@ import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.data.model.enums.FoodSource
 import com.example.simplemacrotracking.data.network.OpenFoodFactsApi
 import com.example.simplemacrotracking.util.NetworkResult
+import com.example.simplemacrotracking.util.NetworkUtils
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import javax.inject.Inject
@@ -13,7 +14,8 @@ import javax.inject.Singleton
 @Singleton
 class FoodRepository @Inject constructor(
     private val dao: FoodItemDao,
-    private val api: OpenFoodFactsApi
+    private val api: OpenFoodFactsApi,
+    private val networkUtils: NetworkUtils
 ) {
 
     fun getAllFoodItems(): Flow<List<FoodItem>> = dao.getAllFoodItems()
@@ -36,6 +38,8 @@ class FoodRepository @Inject constructor(
         // Check local cache first
         val cached = dao.getFoodItemByBarcode(barcode)
         if (cached != null) return NetworkResult.Success(cached)
+
+        if (!networkUtils.isOnline()) return NetworkResult.Error("No internet connection")
 
         return try {
             val response = api.getProduct(barcode)

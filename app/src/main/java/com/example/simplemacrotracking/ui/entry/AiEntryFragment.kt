@@ -19,6 +19,8 @@ import com.example.simplemacrotracking.data.network.dto.GeminiRequest
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.FoodRepository
 import com.example.simplemacrotracking.databinding.FragmentAiEntryBinding
+import com.example.simplemacrotracking.util.NetworkUtils
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -33,6 +35,7 @@ class AiEntryFragment : Fragment() {
     @Inject lateinit var geminiApi: GeminiApi
     @Inject lateinit var settingsPrefs: SettingsPrefs
     @Inject lateinit var foodRepository: FoodRepository
+    @Inject lateinit var networkUtils: NetworkUtils
 
     companion object {
         fun newInstance(targetDate: String) = AiEntryFragment().apply {
@@ -70,6 +73,10 @@ class AiEntryFragment : Fragment() {
     }
 
     private fun callGemini(description: String) {
+        if (!networkUtils.isOnline()) {
+            showError("No internet connection. Please check your connection and try again.")
+            return
+        }
         val apiKey = settingsPrefs.aiApiKey
         binding.btnEstimate.isEnabled = false
         binding.layoutLoading.visibility = View.VISIBLE
@@ -99,6 +106,9 @@ class AiEntryFragment : Fragment() {
                 } else {
                     showError("API error: ${response.code()}")
                 }
+            } catch (e: java.io.IOException) {
+                Log.e("AiEntryFragment", "Network error calling Gemini API", e)
+                showError("No internet connection. Please check your connection and try again.")
             } catch (e: Exception) {
                 Log.e("AiEntryFragment", "Error calling Gemini API", e)
                 showError(e.message ?: "Unknown error")
@@ -167,8 +177,10 @@ class AiEntryFragment : Fragment() {
 
     private fun showError(message: String) {
         binding.layoutLoading.visibility = View.GONE
+        binding.layoutPrompt.visibility = View.VISIBLE
         binding.btnEstimate.isEnabled = true
         binding.etDescription.error = message
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
     private fun saveConfirmedFood() {

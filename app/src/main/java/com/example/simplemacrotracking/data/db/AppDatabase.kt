@@ -14,7 +14,7 @@ import com.example.simplemacrotracking.data.model.WeightEntry
 @Database(
     entities = [FoodItem::class, DiaryEntry::class, WeightEntry::class],
     version = 1,
-    exportSchema = false
+    exportSchema = true   // schema JSON exported to schemas/ for future migration tracking
 )
 @TypeConverters(LocalDateConverter::class)
 abstract class AppDatabase : RoomDatabase() {

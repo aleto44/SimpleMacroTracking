@@ -12,6 +12,7 @@ import com.example.simplemacrotracking.data.network.dto.GeminiRequest
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.WeightRepository
+import com.example.simplemacrotracking.util.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,8 @@ class SettingsViewModel @Inject constructor(
     private val settingsPrefs: SettingsPrefs,
     private val weightRepository: WeightRepository,
     private val diaryRepository: DiaryRepository,
-    private val geminiApi: GeminiApi
+    private val geminiApi: GeminiApi,
+    private val networkUtils: NetworkUtils
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(loadFromPrefs())
@@ -84,6 +86,10 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(apiKeyTestResult = "Please enter an API key in the field first.") }
             return
         }
+        if (!networkUtils.isOnline()) {
+            _uiState.update { it.copy(apiKeyTestResult = "✗ No internet connection. Please check your connection and try again.") }
+            return
+        }
         _uiState.update { it.copy(isTesting = true) }
         viewModelScope.launch {
             val message = try {
@@ -108,6 +114,8 @@ class SettingsViewModel @Inject constructor(
                     response.code() == 401 || response.code() == 403 -> "✗ Invalid or unauthorized API key"
                     else -> "✗ Error: HTTP ${response.code()}"
                 }
+            } catch (e: java.io.IOException) {
+                "✗ No internet connection. Please check your connection and try again."
             } catch (e: Exception) {
                 "✗ Error: ${e.message}"
             }

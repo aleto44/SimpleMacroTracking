@@ -1,8 +1,11 @@
 package com.example.simplemacrotracking.util
 
+import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
-import androidx.core.content.FileProvider
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
 import com.example.simplemacrotracking.data.model.DiaryEntryWithFood
 import com.example.simplemacrotracking.data.model.WeightEntry
 import java.io.File
@@ -40,19 +43,31 @@ object CsvExporter {
     }
 
     private fun shareFile(context: Context, content: String, filename: String) {
-        val file = File(context.cacheDir, filename)
-        file.writeText(content)
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // API 29+ — use MediaStore, no permission needed
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                put(MediaStore.Downloads.MIME_TYPE, "text/csv")
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { it.write(content.toByteArray()) }
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                Toast.makeText(context, "Saved to Downloads/$filename", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(context, "Failed to save file", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            // API 26-28 — write to public Downloads directory
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            downloadsDir.mkdirs()
+            val file = File(downloadsDir, filename)
+            file.writeText(content)
+            Toast.makeText(context, "Saved to Downloads/$filename", Toast.LENGTH_LONG).show()
         }
-        context.startActivity(Intent.createChooser(intent, "Export $filename"))
     }
 }
-

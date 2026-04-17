@@ -1,6 +1,6 @@
 # SimpleMacroTracking — Project Progress
 
-> Last updated: 2026-04-15
+> Last updated: 2026-04-16
 
 ---
 
@@ -14,8 +14,7 @@
 | Phase 4 | AI entry (Gemini) | ✅ Complete |
 | Phase 5 | Weight log + MPAndroidChart | ✅ Complete |
 | Phase 6 | CSV import/export | ✅ Complete |
-| Phase 7 | Polish & edge cases | ⏳ Not Started |
-| Phase 8 | Theme & Color System (Robinhood dark) | ✅ Complete |
+| Phase 7 | Polish & edge cases | ⏳ Not Started || Phase 8 | Theme & Color System (Robinhood dark) | ✅ Complete |
 | Phase 9 | Diary Screen Redesign | 🔄 POC Done |
 | Phase 10 | Weight Screen Redesign | ⏳ Not Started |
 | Phase 11 | Food DB & Entry Sheets Redesign | ⏳ Not Started |
@@ -149,10 +148,10 @@ All items previously completed.
 - [x] `color/bottom_nav_item.xml` — Green when active, `color_text_secondary` default
 
 - [ ] Empty states on Diary, Food DB, Weight screens
-- [ ] Offline/network error handling in repositories
+- [x] Offline/network error handling in repositories
 - [ ] Over-goal color behavior on progress bars
-- [ ] ProGuard/R8 rules (ZXing, Retrofit, Moshi)
-- [ ] Room migration strategy
+- [x] ProGuard/R8 rules (ZXing, Retrofit, Moshi)
+- [x] Room migration strategy (`fallbackToDestructiveMigration` + `exportSchema = true`)
 - [ ] Final QA pass
 
 ---

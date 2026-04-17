@@ -27,7 +27,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
-        Room.databaseBuilder(ctx, AppDatabase::class.java, "macro_db").build()
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "macro_db")
+            .fallbackToDestructiveMigration()   // safe during pre-release; replace with proper migrations before v2
+            .build()
 
     @Provides
     fun provideFoodItemDao(db: AppDatabase) = db.foodItemDao()
