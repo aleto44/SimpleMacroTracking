@@ -15,12 +15,12 @@ val localProps = Properties().apply {
 
 android {
     namespace = "com.example.simplemacrotracking"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.alexg.simplemacrotracking"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -73,8 +73,6 @@ android {
         disable += "NullSafeMutableLiveData"
     }
 
-    // Since you are using compileSdk 36, add this to suppress the warning
-    // that usually blocks some AGP versions
     @Suppress("UnstableApiUsage")
     testOptions {
         unitTests.isIncludeAndroidResources = true
@@ -88,9 +86,9 @@ android {
 }
 
 // Force skip the crashing lint task for release builds
-tasks.whenTaskAdded {
-    if (name == "lintVitalAnalyzeRelease") {
-        enabled = false
+afterEvaluate {
+    tasks.findByName("lintVitalAnalyzeRelease")?.let {
+        it.enabled = false
     }
 }
 
