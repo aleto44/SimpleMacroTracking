@@ -135,6 +135,7 @@
 
             <!-- Macros Card — stacked protein / carbs / fat -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_macros"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -152,6 +153,7 @@
 
                     <!-- Protein row -->
                     <LinearLayout
+                        android:id="@+id/row_protein"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -179,6 +181,7 @@
 
                     <!-- Carbs row -->
                     <LinearLayout
+                        android:id="@+id/row_carbs"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -206,6 +209,7 @@
 
                     <!-- Fat row -->
                     <LinearLayout
+                        android:id="@+id/row_fat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"

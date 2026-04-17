@@ -60,9 +60,9 @@ class SettingsFragment : Fragment() {
 
         binding.btnSaveGoals.setOnClickListener {
             val cal  = binding.etCalories.text.toString().toIntOrNull() ?: return@setOnClickListener
-            val prot = binding.etProtein.text.toString().toIntOrNull()  ?: return@setOnClickListener
-            val carbs = binding.etCarbs.text.toString().toIntOrNull()   ?: return@setOnClickListener
-            val fat  = binding.etFat.text.toString().toIntOrNull()      ?: return@setOnClickListener
+            val prot = binding.etProtein.text.toString().toIntOrNull() ?: 0
+            val carbs = binding.etCarbs.text.toString().toIntOrNull() ?: 0
+            val fat  = binding.etFat.text.toString().toIntOrNull() ?: 0
             viewModel.saveGoals(cal, prot, carbs, fat)
             Snackbar.make(requireView(), "Goals saved ✓", Snackbar.LENGTH_SHORT).show()
         }
@@ -99,9 +99,9 @@ class SettingsFragment : Fragment() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     binding.etCalories.setText(state.calorieGoal.toString())
-                    binding.etProtein.setText(state.proteinGoal.toString())
-                    binding.etCarbs.setText(state.carbsGoal.toString())
-                    binding.etFat.setText(state.fatGoal.toString())
+                    binding.etProtein.setText(if (state.proteinGoal > 0) state.proteinGoal.toString() else "")
+                    binding.etCarbs.setText(if (state.carbsGoal > 0) state.carbsGoal.toString() else "")
+                    binding.etFat.setText(if (state.fatGoal > 0) state.fatGoal.toString() else "")
                     binding.rgWeightUnit.check(
                         if (state.weightUnit == WeightUnit.LB) binding.rbLb.id else binding.rbKg.id
                     )

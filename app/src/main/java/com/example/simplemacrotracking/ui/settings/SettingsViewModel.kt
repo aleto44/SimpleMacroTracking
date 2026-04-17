@@ -24,9 +24,9 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val calorieGoal: Int = 2000,
-    val proteinGoal: Int = 150,
-    val carbsGoal: Int = 200,
-    val fatGoal: Int = 65,
+    val proteinGoal: Int = 0,
+    val carbsGoal: Int = 0,
+    val fatGoal: Int = 0,
     val weightUnit: WeightUnit = WeightUnit.LB,
     val aiApiKey: String = "",
     val isConverting: Boolean = false,

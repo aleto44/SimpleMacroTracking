@@ -125,19 +125,35 @@ class DiaryFragment : Fragment() {
         binding.tvCalories.text = "$calConsumed / $calGoal kcal"
 
         // Protein
-        val protRatio = if (state.goals.proteinG > 0) state.consumed.proteinG / state.goals.proteinG else 0f
-        binding.progressProtein.ratio = protRatio
-        binding.tvProtein.text = "%.0fg / %.0fg".format(state.consumed.proteinG, state.goals.proteinG)
+        val hasProteinGoal = state.goals.proteinG > 0
+        binding.rowProtein.visibility = if (hasProteinGoal) View.VISIBLE else View.GONE
+        binding.progressProtein.visibility = if (hasProteinGoal) View.VISIBLE else View.GONE
+        if (hasProteinGoal) {
+            binding.progressProtein.ratio = state.consumed.proteinG / state.goals.proteinG
+            binding.tvProtein.text = "%.0fg / %.0fg".format(state.consumed.proteinG, state.goals.proteinG)
+        }
 
         // Carbs
-        val carbRatio = if (state.goals.carbsG > 0) state.consumed.carbsG / state.goals.carbsG else 0f
-        binding.progressCarbs.ratio = carbRatio
-        binding.tvCarbs.text = "%.0fg / %.0fg".format(state.consumed.carbsG, state.goals.carbsG)
+        val hasCarbsGoal = state.goals.carbsG > 0
+        binding.rowCarbs.visibility = if (hasCarbsGoal) View.VISIBLE else View.GONE
+        binding.progressCarbs.visibility = if (hasCarbsGoal) View.VISIBLE else View.GONE
+        if (hasCarbsGoal) {
+            binding.progressCarbs.ratio = state.consumed.carbsG / state.goals.carbsG
+            binding.tvCarbs.text = "%.0fg / %.0fg".format(state.consumed.carbsG, state.goals.carbsG)
+        }
 
         // Fat
-        val fatRatio = if (state.goals.fatG > 0) state.consumed.fatG / state.goals.fatG else 0f
-        binding.progressFat.ratio = fatRatio
-        binding.tvFat.text = "%.0fg / %.0fg".format(state.consumed.fatG, state.goals.fatG)
+        val hasFatGoal = state.goals.fatG > 0
+        binding.rowFat.visibility = if (hasFatGoal) View.VISIBLE else View.GONE
+        binding.progressFat.visibility = if (hasFatGoal) View.VISIBLE else View.GONE
+        if (hasFatGoal) {
+            binding.progressFat.ratio = state.consumed.fatG / state.goals.fatG
+            binding.tvFat.text = "%.0fg / %.0fg".format(state.consumed.fatG, state.goals.fatG)
+        }
+
+        // Hide the entire macros card if no macro goals are set
+        binding.cardMacros.visibility =
+            if (hasProteinGoal || hasCarbsGoal || hasFatGoal) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {
