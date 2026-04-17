@@ -30,7 +30,7 @@ class FoodDatabaseViewModel @Inject constructor(
         observeItems()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
     private fun observeItems() {
         viewModelScope.launch {
             _query.debounce(200).flatMapLatest { q ->

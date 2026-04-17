@@ -85,10 +85,11 @@ android {
     }
 }
 
-// Force skip the crashing lint task for release builds
-afterEvaluate {
-    tasks.findByName("lintVitalAnalyzeRelease")?.let {
-        it.enabled = false
+// Force skip the crashing lint vital task for release builds
+// (IncompatibleClassChangeError in NonNullableMutableLiveDataDetector with Kotlin 2.x)
+tasks.configureEach {
+    if (name.startsWith("lintVital")) {
+        enabled = false
     }
 }
 
