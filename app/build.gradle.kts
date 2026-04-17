@@ -28,10 +28,18 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(localProps.getProperty("RELEASE_STORE_FILE", "release.keystore"))
+            // Prefer local.properties; fall back to environment variables (used in CI/GitHub Actions)
+            storeFile = file(
+                localProps.getProperty("RELEASE_STORE_FILE")
+                    ?: System.getenv("RELEASE_STORE_FILE")
+                    ?: "release.keystore"
+            )
             storePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+                ?: System.getenv("RELEASE_STORE_PASSWORD")
             keyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")
+                ?: System.getenv("RELEASE_KEY_ALIAS")
             keyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+                ?: System.getenv("RELEASE_KEY_PASSWORD")
         }
     }
 
