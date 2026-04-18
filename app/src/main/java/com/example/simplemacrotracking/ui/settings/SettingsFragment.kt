@@ -119,6 +119,14 @@ class SettingsFragment : Fragment() {
                     // Force re-measure for wrap_content RecyclerView in NestedScrollView
                     binding.rvAiProviders.requestLayout()
 
+                    // Disable add buttons when that provider type already exists (one of each only)
+                    val hasGemini  = state.aiProviders.any { it.type == AiProviderType.GEMINI }
+                    val hasCopilot = state.aiProviders.any { it.type == AiProviderType.GITHUB_COPILOT }
+                    binding.btnAddGemini.isEnabled  = !hasGemini
+                    binding.btnAddCopilot.isEnabled = !hasCopilot
+                    binding.btnAddGemini.alpha  = if (hasGemini)  0.38f else 1.0f
+                    binding.btnAddCopilot.alpha = if (hasCopilot) 0.38f else 1.0f
+
                     // Update per-item testing spinner
                     aiProviderAdapter.testingProviderId = state.testingProviderId
 

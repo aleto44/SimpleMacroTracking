@@ -89,6 +89,8 @@ class SettingsViewModel @Inject constructor(
 
     fun addProvider(type: AiProviderType) {
         val current = try { settingsPrefs.aiProviders } catch (e: Exception) { emptyList() }
+        // Enforce one-of-each rule
+        if (current.any { it.type == type }) return
         val updated = current.toMutableList().also {
             it.add(AiProviderConfig(id = UUID.randomUUID().toString(), type = type))
         }
