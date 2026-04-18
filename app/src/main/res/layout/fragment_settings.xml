@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_bg_primary">
+    android:background="@color/color_bg_primary"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -108,30 +110,55 @@
         <View android:layout_width="match_parent" android:layout_height="1dp"
             android:background="@color/color_border" android:layout_marginBottom="16dp" />
 
-        <!-- AI API Key -->
+        <!-- AI Configuration -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="AI API KEY"
+            android:text="AI CONFIGURATION"
             android:textAppearance="@style/TextAppearance.Macro.SectionLabel"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Providers are tried top-to-bottom. Drag to reorder."
+            android:textColor="@color/color_text_secondary"
+            android:textSize="12sp"
             android:layout_marginBottom="12dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="Gemini API Key"
-            style="@style/Style.Macro.InputField"
-            app:passwordToggleEnabled="true"
-            android:layout_marginBottom="8dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_api_key"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:textColor="@color/color_text_primary" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_ai_providers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp" />
 
+        <!-- Add provider buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button android:id="@+id/btn_add_gemini"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ Gemini"
+                style="@style/Style.Macro.Button.Ghost"
+                android:layout_marginEnd="4dp" />
+
+            <Button android:id="@+id/btn_add_copilot"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ GitHub Copilot"
+                style="@style/Style.Macro.Button.Ghost"
+                android:layout_marginStart="4dp" />
+
+        </LinearLayout>
+
+        <!-- Hidden legacy views kept to avoid binding crashes -->
+        <View android:id="@+id/et_api_key" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <Button android:id="@+id/btn_test_api_key"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Test"
-            style="@style/Style.Macro.Button.Primary"
-            android:layout_marginBottom="16dp" />
+            android:visibility="gone" />
 
         <View android:layout_width="match_parent" android:layout_height="1dp"
             android:background="@color/color_border" android:layout_marginBottom="16dp" />
@@ -162,5 +189,5 @@
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 

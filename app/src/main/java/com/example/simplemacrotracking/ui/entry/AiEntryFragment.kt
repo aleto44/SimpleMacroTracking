@@ -13,12 +13,9 @@ import com.example.simplemacrotracking.BuildConfig
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.data.model.enums.FoodSource
-import com.example.simplemacrotracking.data.network.GeminiApi
-import com.example.simplemacrotracking.data.network.dto.GeminiContent
-import com.example.simplemacrotracking.data.network.dto.GeminiPart
-import com.example.simplemacrotracking.data.network.dto.GeminiRequest
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.FoodRepository
+import com.example.simplemacrotracking.data.service.WaterfallAiService
 import com.example.simplemacrotracking.databinding.FragmentAiEntryBinding
 import com.example.simplemacrotracking.util.NetworkUtils
 import com.google.android.material.snackbar.Snackbar
@@ -33,7 +30,7 @@ class AiEntryFragment : Fragment() {
     private var _binding: FragmentAiEntryBinding? = null
     private val binding get() = _binding!!
 
-    @Inject lateinit var geminiApi: GeminiApi
+    @Inject lateinit var waterfallAiService: WaterfallAiService
     @Inject lateinit var settingsPrefs: SettingsPrefs
     @Inject lateinit var foodRepository: FoodRepository
     @Inject lateinit var networkUtils: NetworkUtils
@@ -54,8 +51,8 @@ class AiEntryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val apiKey = settingsPrefs.aiApiKey
-        if (apiKey.isBlank()) {
+        val providers = settingsPrefs.aiProviders.filter { it.enabled }
+        if (providers.isEmpty()) {
             binding.layoutNoKey.visibility = View.VISIBLE
             binding.layoutPrompt.visibility = View.GONE
             binding.btnGoToSettings.setOnClickListener {
@@ -67,18 +64,17 @@ class AiEntryFragment : Fragment() {
         binding.btnEstimate.setOnClickListener {
             val description = binding.etDescription.text.toString().trim()
             if (description.isBlank()) return@setOnClickListener
-            callGemini(description)
+            callAi(description)
         }
 
         binding.btnSaveConfirmation.setOnClickListener { saveConfirmedFood() }
     }
 
-    private fun callGemini(description: String) {
+    private fun callAi(description: String) {
         if (!networkUtils.isOnline()) {
             showError("No internet connection. Please check your connection and try again.")
             return
         }
-        val apiKey = settingsPrefs.aiApiKey
         binding.btnEstimate.isEnabled = false
         binding.layoutLoading.visibility = View.VISIBLE
 
@@ -91,27 +87,14 @@ class AiEntryFragment : Fragment() {
             """.trimIndent()
 
             try {
-                val request = GeminiRequest(
-                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt))))
-                )
-                val response = geminiApi.generateContent(apiKey, request)
-                if (response.isSuccessful) {
-                    val text = response.body()?.candidates
-                        ?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-                    if (text != null) {
-                        if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "AI Response: $text")
-                        parseAndShowConfirmation(text)
-                    } else {
-                        showError("Empty response from AI")
-                    }
-                } else {
-                    showError("API error: ${response.code()}")
-                }
+                val text = waterfallAiService.generateContent(prompt)
+                if (BuildConfig.DEBUG) Log.d("AiEntryFragment", "AI Response: $text")
+                parseAndShowConfirmation(text)
             } catch (e: java.io.IOException) {
-                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Network error calling Gemini API", e)
+                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Network error", e)
                 showError("No internet connection. Please check your connection and try again.")
             } catch (e: Exception) {
-                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Error calling Gemini API", e)
+                if (BuildConfig.DEBUG) Log.e("AiEntryFragment", "Error calling AI", e)
                 showError(e.message ?: "Unknown error")
             }
         }
@@ -213,4 +196,3 @@ class AiEntryFragment : Fragment() {
         _binding = null
     }
 }
-
