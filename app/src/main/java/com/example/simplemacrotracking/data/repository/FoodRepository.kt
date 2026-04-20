@@ -51,16 +51,38 @@ class FoodRepository @Inject constructor(
                 val product = response.body()?.product
                 if (product != null) {
                     val n = product.nutriments
+                    // Prefer per-serving values when the product has a serving size defined
+                    val servingQty = product.servingQuantity
+                    val useServing = servingQty != null && servingQty > 0f &&
+                        n?.caloriesPerServing != null
+                    val baseAmount: Float
+                    val calories: Float
+                    val protein: Float
+                    val carbs: Float
+                    val fat: Float
+                    if (useServing) {
+                        baseAmount = servingQty!!
+                        calories = n?.caloriesPerServing ?: 0f
+                        protein  = n?.proteinPerServing  ?: 0f
+                        carbs    = n?.carbsPerServing    ?: 0f
+                        fat      = n?.fatPerServing      ?: 0f
+                    } else {
+                        baseAmount = 100f
+                        calories = n?.caloriesPer100g ?: 0f
+                        protein  = n?.proteinPer100g  ?: 0f
+                        carbs    = n?.carbsPer100g    ?: 0f
+                        fat      = n?.fatPer100g      ?: 0f
+                    }
                     val item = FoodItem(
                         name = product.productName?.ifBlank { "Unknown Product" } ?: "Unknown Product",
                         brand = product.brands?.ifBlank { null },
                         barcode = barcode,
-                        baseAmount = 100f,
+                        baseAmount = baseAmount,
                         measurementType = "g",
-                        calories = n?.caloriesPer100g ?: 0f,
-                        proteinG = n?.proteinPer100g ?: 0f,
-                        carbsG = n?.carbsPer100g ?: 0f,
-                        fatG = n?.fatPer100g ?: 0f,
+                        calories = calories,
+                        proteinG = protein,
+                        carbsG = carbs,
+                        fatG = fat,
                         source = FoodSource.BARCODE
                     )
                     val id = dao.insertFoodItem(item)
