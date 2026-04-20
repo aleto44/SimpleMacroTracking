@@ -3,13 +3,23 @@ package com.example.simplemacrotracking.data.prefs
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.example.simplemacrotracking.data.model.AiProviderConfig
+import com.example.simplemacrotracking.data.model.AiProviderType
 import com.example.simplemacrotracking.data.model.enums.WeightUnit
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SettingsPrefs @Inject constructor(@ApplicationContext context: Context) {
+
+    private val moshi: Moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    private val providerListType = Types.newParameterizedType(List::class.java, AiProviderConfig::class.java)
+    private val providerAdapter by lazy { moshi.adapter<List<AiProviderConfig>>(providerListType) }
 
     private val prefs = try {
         val masterKey = MasterKey.Builder(context)
@@ -60,5 +70,26 @@ class SettingsPrefs @Inject constructor(@ApplicationContext context: Context) {
     var aiApiKey: String
         get() = prefs.getString("ai_api_key", "") ?: ""
         set(v) = prefs.edit().putString("ai_api_key", v).apply()
-}
 
+    /**
+     * Ordered list of AI providers. The app tries them top-to-bottom (waterfall).
+     * On first access, auto-migrates the legacy [aiApiKey] into a Gemini provider.
+     */
+    var aiProviders: List<AiProviderConfig>
+        get() {
+            val json = prefs.getString("ai_providers", null)
+            if (json != null) {
+                return try {
+                    providerAdapter.fromJson(json) ?: emptyList()
+                } catch (e: Exception) { emptyList() }
+            }
+            // Migrate legacy key
+            val legacyKey = aiApiKey
+            return if (legacyKey.isNotBlank()) {
+                listOf(AiProviderConfig(id = UUID.randomUUID().toString(), type = AiProviderType.GEMINI, apiKey = legacyKey))
+            } else {
+                emptyList()
+            }
+        }
+        set(v) = prefs.edit().putString("ai_providers", providerAdapter.toJson(v)).apply()
+}

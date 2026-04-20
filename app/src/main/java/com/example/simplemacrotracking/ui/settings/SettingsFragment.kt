@@ -5,12 +5,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.simplemacrotracking.data.model.AiProviderType
 import com.example.simplemacrotracking.data.model.enums.WeightUnit
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.FoodRepository
@@ -33,6 +37,8 @@ class SettingsFragment : Fragment() {
     @Inject lateinit var foodRepository: FoodRepository
     @Inject lateinit var diaryRepository: DiaryRepository
     @Inject lateinit var weightRepository: WeightRepository
+
+    private lateinit var aiProviderAdapter: AiProviderAdapter
 
     private val importLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri ?: return@registerForActivityResult
@@ -59,10 +65,10 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.btnSaveGoals.setOnClickListener {
-            val cal  = binding.etCalories.text.toString().toIntOrNull() ?: return@setOnClickListener
-            val prot = binding.etProtein.text.toString().toIntOrNull() ?: 0
+            val cal   = binding.etCalories.text.toString().toIntOrNull() ?: return@setOnClickListener
+            val prot  = binding.etProtein.text.toString().toIntOrNull() ?: 0
             val carbs = binding.etCarbs.text.toString().toIntOrNull() ?: 0
-            val fat  = binding.etFat.text.toString().toIntOrNull() ?: 0
+            val fat   = binding.etFat.text.toString().toIntOrNull() ?: 0
             viewModel.saveGoals(cal, prot, carbs, fat)
             Snackbar.make(requireView(), "Goals saved ✓", Snackbar.LENGTH_SHORT).show()
         }
@@ -72,28 +78,28 @@ class SettingsFragment : Fragment() {
             viewModel.setWeightUnit(unit)
         }
 
+        setupAiProviderList()
 
-        binding.btnTestApiKey.setOnClickListener {
-            viewModel.testApiKey(binding.etApiKey.text.toString())
+        binding.btnAddGemini.setOnClickListener {
+            viewModel.addProvider(AiProviderType.GEMINI)
+            Snackbar.make(binding.root, "Gemini provider added ↓", Snackbar.LENGTH_SHORT).show()
+        }
+        binding.btnAddGithubModels.setOnClickListener {
+            viewModel.addProvider(AiProviderType.GITHUB_MODELS)
+            Snackbar.make(binding.root, "GitHub Models provider added ↓", Snackbar.LENGTH_SHORT).show()
         }
 
         binding.btnExportDiary.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
-                val entries = viewModel.getAllDiaryEntries()
-                CsvExporter.exportDiary(requireContext(), entries)
+                CsvExporter.exportDiary(requireContext(), viewModel.getAllDiaryEntries())
             }
         }
-
         binding.btnExportWeight.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
-                val entries = viewModel.getAllWeightEntries()
-                CsvExporter.exportWeight(requireContext(), entries)
+                CsvExporter.exportWeight(requireContext(), viewModel.getAllWeightEntries())
             }
         }
-
-        binding.btnImportCsv.setOnClickListener {
-            importLauncher.launch("*/*")
-        }
+        binding.btnImportCsv.setOnClickListener { importLauncher.launch("*/*") }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -105,18 +111,29 @@ class SettingsFragment : Fragment() {
                     binding.rgWeightUnit.check(
                         if (state.weightUnit == WeightUnit.LB) binding.rbLb.id else binding.rbKg.id
                     )
-                    binding.etApiKey.setText(state.aiApiKey)
                     binding.progressConverting.visibility =
                         if (state.isConverting) View.VISIBLE else View.GONE
 
-                    // Test button: show spinner text while in-flight, disable while testing
-                    binding.btnTestApiKey.isEnabled = !state.isTesting
-                    binding.btnTestApiKey.text = if (state.isTesting) "Testing..." else "Test"
+                    // Update provider list
+                    aiProviderAdapter.submitList(state.aiProviders)
+                    // Force re-measure for wrap_content RecyclerView in NestedScrollView
+                    binding.rvAiProviders.requestLayout()
 
-                    // Show result dialog when result arrives
+                    // Disable add buttons when that provider type already exists (one of each only)
+                    val hasGemini       = state.aiProviders.any { it.type == AiProviderType.GEMINI }
+                    val hasGitHubModels = state.aiProviders.any { it.type == AiProviderType.GITHUB_MODELS }
+                    binding.btnAddGemini.isEnabled       = !hasGemini
+                    binding.btnAddGithubModels.isEnabled = !hasGitHubModels
+                    binding.btnAddGemini.alpha       = if (hasGemini)       0.38f else 1.0f
+                    binding.btnAddGithubModels.alpha = if (hasGitHubModels) 0.38f else 1.0f
+
+                    // Update per-item testing spinner
+                    aiProviderAdapter.testingProviderId = state.testingProviderId
+
+                    // Show test result dialog
                     state.apiKeyTestResult?.let { message ->
                         MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("API Key Test")
+                            .setTitle("AI Provider Test")
                             .setMessage(message)
                             .setPositiveButton("OK") { _, _ -> viewModel.clearApiKeyTestResult() }
                             .setOnCancelListener { viewModel.clearApiKeyTestResult() }
@@ -125,6 +142,52 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
+
+        // Scroll to newly added provider card
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.scrollToProvider.collect { _ ->
+                    binding.rvAiProviders.post {
+                        binding.scrollView.post {
+                            binding.scrollView.smoothScrollTo(0, binding.rvAiProviders.bottom + 200)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupAiProviderList() {
+        aiProviderAdapter = AiProviderAdapter(
+            onProvidersChanged = { viewModel.updateProviders(it) },
+            onTestProvider = { pos -> viewModel.testProvider(pos) }
+        )
+
+        binding.rvAiProviders.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = aiProviderAdapter
+        }
+
+        val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                aiProviderAdapter.onItemMove(vh.adapterPosition, target.adapterPosition)
+                return true
+            }
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {}
+            override fun isLongPressDragEnabled() = false
+            override fun onSelectedChanged(vh: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(vh, actionState)
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) vh?.itemView?.alpha = 0.8f
+            }
+            override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) {
+                super.clearView(rv, vh)
+                vh.itemView.alpha = 1.0f
+            }
+        })
+        touchHelper.attachToRecyclerView(binding.rvAiProviders)
+        aiProviderAdapter.touchHelper = touchHelper
     }
 
     override fun onDestroyView() {

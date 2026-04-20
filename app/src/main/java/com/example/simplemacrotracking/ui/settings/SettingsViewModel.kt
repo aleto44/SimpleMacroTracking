@@ -2,25 +2,28 @@ package com.example.simplemacrotracking.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.simplemacrotracking.data.model.AiProviderConfig
+import com.example.simplemacrotracking.data.model.AiProviderType
 import com.example.simplemacrotracking.data.model.DiaryEntryWithFood
 import com.example.simplemacrotracking.data.model.WeightEntry
 import com.example.simplemacrotracking.data.model.enums.WeightUnit
-import com.example.simplemacrotracking.data.network.GeminiApi
-import com.example.simplemacrotracking.data.network.dto.GeminiContent
-import com.example.simplemacrotracking.data.network.dto.GeminiPart
-import com.example.simplemacrotracking.data.network.dto.GeminiRequest
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.WeightRepository
+import com.example.simplemacrotracking.data.service.WaterfallAiService
 import com.example.simplemacrotracking.util.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 data class SettingsUiState(
@@ -30,8 +33,10 @@ data class SettingsUiState(
     val fatGoal: Int = 0,
     val weightUnit: WeightUnit = WeightUnit.LB,
     val aiApiKey: String = "",
+    val aiProviders: List<AiProviderConfig> = emptyList(),
     val isConverting: Boolean = false,
-    val isTesting: Boolean = false,
+    /** ID of the provider currently being tested (null = none). */
+    val testingProviderId: String? = null,
     val apiKeyTestResult: String? = null
 )
 
@@ -40,12 +45,16 @@ class SettingsViewModel @Inject constructor(
     private val settingsPrefs: SettingsPrefs,
     private val weightRepository: WeightRepository,
     private val diaryRepository: DiaryRepository,
-    private val geminiApi: GeminiApi,
-    private val networkUtils: NetworkUtils
+    private val networkUtils: NetworkUtils,
+    private val waterfallAiService: WaterfallAiService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(loadFromPrefs())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    /** Fires once after a provider is added — the Int is the new item's adapter position. */
+    private val _scrollToProvider = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val scrollToProvider: SharedFlow<Int> = _scrollToProvider.asSharedFlow()
 
     private fun loadFromPrefs() = SettingsUiState(
         calorieGoal = settingsPrefs.calorieGoal,
@@ -53,7 +62,8 @@ class SettingsViewModel @Inject constructor(
         carbsGoal   = settingsPrefs.carbsGoal,
         fatGoal     = settingsPrefs.fatGoal,
         weightUnit  = settingsPrefs.preferredWeightUnit,
-        aiApiKey    = settingsPrefs.aiApiKey
+        aiApiKey    = settingsPrefs.aiApiKey,
+        aiProviders = settingsPrefs.aiProviders
     )
 
     fun saveGoals(calories: Int, protein: Int, carbs: Int, fat: Int) {
@@ -75,52 +85,44 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun saveApiKey(key: String) {
-        settingsPrefs.aiApiKey = key
-        _uiState.update { it.copy(aiApiKey = key) }
+    // ── AI Provider management ─────────────────────────────────────────────────
+
+    fun addProvider(type: AiProviderType) {
+        val current = try { settingsPrefs.aiProviders } catch (e: Exception) { emptyList() }
+        // Enforce one-of-each rule
+        if (current.any { it.type == type }) return
+        val updated = current.toMutableList().also {
+            it.add(AiProviderConfig(id = UUID.randomUUID().toString(), type = type))
+        }
+        try { settingsPrefs.aiProviders = updated } catch (e: Exception) { /* prefs write failed; state still updates */ }
+        _uiState.update { it.copy(aiProviders = updated) }
+        _scrollToProvider.tryEmit(updated.lastIndex)
     }
 
-    fun testApiKey(keyFromField: String) {
-        val key = keyFromField.trim()
-        if (key.isBlank()) {
-            _uiState.update { it.copy(apiKeyTestResult = "Please enter an API key in the field first.") }
+    fun updateProviders(providers: List<AiProviderConfig>) {
+        settingsPrefs.aiProviders = providers
+        _uiState.update { it.copy(aiProviders = providers) }
+    }
+
+    fun testProvider(position: Int) {
+        val providers = settingsPrefs.aiProviders
+        if (position < 0 || position >= providers.size) return
+        val config = providers[position]
+
+        if (config.apiKey.isBlank()) {
+            _uiState.update { it.copy(apiKeyTestResult = "Please enter an API key first.") }
             return
         }
         if (!networkUtils.isOnline()) {
-            _uiState.update { it.copy(apiKeyTestResult = "✗ No internet connection. Please check your connection and try again.") }
+            _uiState.update { it.copy(apiKeyTestResult = "✗ No internet connection.") }
             return
         }
-        _uiState.update { it.copy(isTesting = true) }
+
+        _uiState.update { it.copy(testingProviderId = config.id) }
         viewModelScope.launch {
-            val message = try {
-                val request = GeminiRequest(
-                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = "Reply with: OK"))))
-                )
-                val response = geminiApi.generateContent(key, request)
-                when {
-                    response.isSuccessful -> {
-                        // Save the key only on success
-                        settingsPrefs.aiApiKey = key
-                        _uiState.update { it.copy(aiApiKey = key) }
-                        "✓ API key is valid and saved"
-                    }
-                    response.code() == 429 -> {
-                        // Save the key on rate limit too (it's valid)
-                        settingsPrefs.aiApiKey = key
-                        _uiState.update { it.copy(aiApiKey = key) }
-                        "✓ API key is valid and saved\n\n(Rate limit hit — this just means the free tier quota was briefly exceeded. Your key works fine.)"
-                    }
-                    response.code() == 404 -> "✗ Model not found — the AI model may have been renamed or is unavailable"
-                    response.code() == 401 || response.code() == 403 -> "✗ Invalid or unauthorized API key"
-                    else -> "✗ Error: HTTP ${response.code()}"
-                }
-            } catch (e: java.io.IOException) {
-                "✗ No internet connection. Please check your connection and try again."
-            } catch (e: Exception) {
-                "✗ Error: ${e.message}"
-            }
+            val message = waterfallAiService.testProvider(config)
             withContext(Dispatchers.Main) {
-                _uiState.update { it.copy(apiKeyTestResult = message, isTesting = false) }
+                _uiState.update { it.copy(apiKeyTestResult = message, testingProviderId = null) }
             }
         }
     }
