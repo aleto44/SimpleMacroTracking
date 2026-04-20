@@ -135,13 +135,13 @@ class AiProviderAdapter(
             // Provider name
             b.tvProviderName.text = when (config.type) {
                 AiProviderType.GEMINI        -> "Gemini (Google AI)"
-                AiProviderType.GITHUB_COPILOT -> "GitHub Copilot"
+                AiProviderType.GITHUB_MODELS -> "GitHub Models"
             }
 
             // API key hint
             b.tilApiKey.hint = when (config.type) {
                 AiProviderType.GEMINI        -> "Gemini API Key"
-                AiProviderType.GITHUB_COPILOT -> "GitHub Personal Access Token"
+                AiProviderType.GITHUB_MODELS -> "GitHub PAT (models:read permission)"
             }
 
             // API key value (only update if changed to avoid cursor jumping)

@@ -3,11 +3,11 @@ package com.example.simplemacrotracking.data.network.dto
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-// ── OpenAI-compatible chat completions (used by GitHub Copilot) ──────────────
+// ── OpenAI-compatible chat completions (used by GitHub Models & Gemini) ───────
 
 @JsonClass(generateAdapter = true)
 data class ChatRequest(
-    @Json(name = "model") val model: String = "gpt-4o",
+    @Json(name = "model") val model: String,
     @Json(name = "messages") val messages: List<ChatMessage>,
     @Json(name = "max_tokens") val maxTokens: Int = 800,
     @Json(name = "temperature") val temperature: Double = 0.1
@@ -28,21 +28,3 @@ data class ChatResponse(
 data class ChatChoice(
     @Json(name = "message") val message: ChatMessage? = null
 )
-
-// ── GitHub Copilot session token exchange ────────────────────────────────────
-
-@JsonClass(generateAdapter = true)
-data class CopilotTokenResponse(
-    @Json(name = "token") val token: String = "",
-    @Json(name = "expires_at") val expiresAt: Long = 0
-)
-
-// ── GitHub user info ──────────────────────────────────────────────────────────
-
-@JsonClass(generateAdapter = true)
-data class GitHubUser(
-    @Json(name = "login") val login: String = "",
-    @Json(name = "name") val name: String? = null
-)
-
-

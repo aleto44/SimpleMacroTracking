@@ -145,14 +145,15 @@
                 style="@style/Style.Macro.Button.Ghost"
                 android:layout_marginEnd="4dp" />
 
-            <Button android:id="@+id/btn_add_copilot"
+            <Button android:id="@+id/btn_add_github_models"
                 android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="+ GitHub Copilot"
+                android:text="+ GitHub Models"
                 style="@style/Style.Macro.Button.Ghost"
                 android:layout_marginStart="4dp" />
 
         </LinearLayout>
+
 
         <!-- Hidden legacy views kept to avoid binding crashes -->
         <View android:id="@+id/et_api_key" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />

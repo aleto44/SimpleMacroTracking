@@ -84,9 +84,9 @@ class SettingsFragment : Fragment() {
             viewModel.addProvider(AiProviderType.GEMINI)
             Snackbar.make(binding.root, "Gemini provider added ↓", Snackbar.LENGTH_SHORT).show()
         }
-        binding.btnAddCopilot.setOnClickListener {
-            viewModel.addProvider(AiProviderType.GITHUB_COPILOT)
-            Snackbar.make(binding.root, "GitHub Copilot provider added ↓", Snackbar.LENGTH_SHORT).show()
+        binding.btnAddGithubModels.setOnClickListener {
+            viewModel.addProvider(AiProviderType.GITHUB_MODELS)
+            Snackbar.make(binding.root, "GitHub Models provider added ↓", Snackbar.LENGTH_SHORT).show()
         }
 
         binding.btnExportDiary.setOnClickListener {
@@ -120,12 +120,12 @@ class SettingsFragment : Fragment() {
                     binding.rvAiProviders.requestLayout()
 
                     // Disable add buttons when that provider type already exists (one of each only)
-                    val hasGemini  = state.aiProviders.any { it.type == AiProviderType.GEMINI }
-                    val hasCopilot = state.aiProviders.any { it.type == AiProviderType.GITHUB_COPILOT }
-                    binding.btnAddGemini.isEnabled  = !hasGemini
-                    binding.btnAddCopilot.isEnabled = !hasCopilot
-                    binding.btnAddGemini.alpha  = if (hasGemini)  0.38f else 1.0f
-                    binding.btnAddCopilot.alpha = if (hasCopilot) 0.38f else 1.0f
+                    val hasGemini       = state.aiProviders.any { it.type == AiProviderType.GEMINI }
+                    val hasGitHubModels = state.aiProviders.any { it.type == AiProviderType.GITHUB_MODELS }
+                    binding.btnAddGemini.isEnabled       = !hasGemini
+                    binding.btnAddGithubModels.isEnabled = !hasGitHubModels
+                    binding.btnAddGemini.alpha       = if (hasGemini)       0.38f else 1.0f
+                    binding.btnAddGithubModels.alpha = if (hasGitHubModels) 0.38f else 1.0f
 
                     // Update per-item testing spinner
                     aiProviderAdapter.testingProviderId = state.testingProviderId

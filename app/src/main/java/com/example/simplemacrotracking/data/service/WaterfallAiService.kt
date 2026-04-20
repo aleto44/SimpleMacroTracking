@@ -5,17 +5,14 @@ import com.example.simplemacrotracking.BuildConfig
 import com.example.simplemacrotracking.data.model.AiModels
 import com.example.simplemacrotracking.data.model.AiProviderConfig
 import com.example.simplemacrotracking.data.model.AiProviderType
-import com.example.simplemacrotracking.data.network.CopilotApi
 import com.example.simplemacrotracking.data.network.GeminiApi
-import com.example.simplemacrotracking.data.network.GitHubApi
+import com.example.simplemacrotracking.data.network.GitHubModelsApi
 import com.example.simplemacrotracking.data.network.dto.ChatMessage
 import com.example.simplemacrotracking.data.network.dto.ChatRequest
 import com.example.simplemacrotracking.data.network.dto.GeminiContent
 import com.example.simplemacrotracking.data.network.dto.GeminiPart
 import com.example.simplemacrotracking.data.network.dto.GeminiRequest
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,11 +21,8 @@ import javax.inject.Singleton
 class WaterfallAiService @Inject constructor(
     private val settingsPrefs: SettingsPrefs,
     private val geminiApi: GeminiApi,
-    private val copilotApi: CopilotApi,
-    private val gitHubApi: GitHubApi
+    private val gitHubModelsApi: GitHubModelsApi
 ) {
-
-    private val copilotTokenMutex = Mutex()
 
     /** Returns the raw text from whichever provider succeeds first.
      *  Throws [AllProvidersFailedException] if all configured/enabled providers fail. */
@@ -52,8 +46,8 @@ class WaterfallAiService @Inject constructor(
     private suspend fun callProvider(config: AiProviderConfig, prompt: String): String {
         val model = config.model.ifBlank { AiModels.defaultFor(config.type) }
         return when (config.type) {
-            AiProviderType.GEMINI -> callGemini(config.apiKey, model, prompt)
-            AiProviderType.GITHUB_COPILOT -> callCopilot(config.apiKey, model, prompt)
+            AiProviderType.GEMINI        -> callGemini(config.apiKey, model, prompt)
+            AiProviderType.GITHUB_MODELS -> callGitHubModels(config.apiKey, model, prompt)
         }
     }
 
@@ -75,18 +69,19 @@ class WaterfallAiService @Inject constructor(
                         else -> "✗ Error: HTTP ${response.code()}"
                     }
                 }
-                AiProviderType.GITHUB_COPILOT -> {
-                    // First validate the PAT by exchanging for a session token
-                    val sessionToken = getValidCopilotSessionToken(config.apiKey, forceRefresh = true)
+                AiProviderType.GITHUB_MODELS -> {
                     val request = ChatRequest(
                         model = model,
                         messages = listOf(ChatMessage(role = "user", content = "Reply with: OK"))
                     )
-                    val response = copilotApi.chatCompletions(bearerToken = "Bearer $sessionToken", body = request)
+                    val response = gitHubModelsApi.chatCompletions(
+                        bearerToken = "Bearer ${config.apiKey}",
+                        body = request
+                    )
                     when {
-                        response.isSuccessful -> "✓ GitHub Copilot key is valid (model: $model)"
-                        response.code() == 429 -> "✓ Key is valid — rate limit hit (model: $model)"
-                        response.code() == 401 || response.code() == 403 -> "✗ Invalid or unauthorized GitHub token"
+                        response.isSuccessful -> "✓ GitHub Models PAT is valid (model: $model)"
+                        response.code() == 429 -> "✓ PAT is valid — rate limit hit (model: $model)"
+                        response.code() == 401 || response.code() == 403 -> "✗ Invalid PAT or missing models:read permission"
                         response.code() == 404 -> "✗ Model not found: $model"
                         else -> "✗ Error: HTTP ${response.code()}"
                     }
@@ -116,54 +111,28 @@ class WaterfallAiService @Inject constructor(
         }
     }
 
-    private suspend fun callCopilot(githubPat: String, model: String, prompt: String): String {
-        val sessionToken = getValidCopilotSessionToken(githubPat)
+    /**
+     * GitHub Models: PAT used directly as Bearer token — no session token exchange needed.
+     * Requires a fine-grained PAT with the models:read permission.
+     */
+    private suspend fun callGitHubModels(githubPat: String, model: String, prompt: String): String {
         val request = ChatRequest(
             model = model,
             messages = listOf(ChatMessage(role = "user", content = prompt))
         )
-        val response = copilotApi.chatCompletions(
-            bearerToken = "Bearer $sessionToken",
+        val response = gitHubModelsApi.chatCompletions(
+            bearerToken = "Bearer $githubPat",
             body = request
         )
         if (response.isSuccessful) {
             return response.body()?.choices
                 ?.firstOrNull()?.message?.content
-                ?: throw Exception("Empty response from Copilot")
+                ?: throw Exception("Empty response from GitHub Models")
         }
         when (response.code()) {
-            429 -> throw RateLimitException("Copilot rate limit (429)")
-            401, 403 -> {
-                // Invalidate cached token and retry once
-                settingsPrefs.copilotSessionToken = ""
-                settingsPrefs.copilotSessionTokenExpiresAt = 0L
-                val freshToken = getValidCopilotSessionToken(githubPat)
-                val retry = copilotApi.chatCompletions(bearerToken = "Bearer $freshToken", body = request)
-                if (retry.isSuccessful) {
-                    return retry.body()?.choices?.firstOrNull()?.message?.content
-                        ?: throw Exception("Empty response from Copilot on retry")
-                }
-                throw AuthException("Copilot auth error (${retry.code()})")
-            }
-            else -> throw Exception("Copilot error ${response.code()}")
-        }
-    }
-
-    private suspend fun getValidCopilotSessionToken(githubPat: String, forceRefresh: Boolean = false): String {
-        copilotTokenMutex.withLock {
-            val now = System.currentTimeMillis() / 1000L
-            val cached = settingsPrefs.copilotSessionToken
-            val expiresAt = settingsPrefs.copilotSessionTokenExpiresAt
-            if (!forceRefresh && cached.isNotBlank() && expiresAt - now > 120) return cached
-
-            val response = gitHubApi.getCopilotToken("token $githubPat")
-            if (response.isSuccessful) {
-                val body = response.body()!!
-                settingsPrefs.copilotSessionToken = body.token
-                settingsPrefs.copilotSessionTokenExpiresAt = body.expiresAt
-                return body.token
-            }
-            throw AuthException("Failed to obtain Copilot session token: HTTP ${response.code()} — make sure your GitHub PAT has the 'copilot' scope")
+            429  -> throw RateLimitException("GitHub Models rate limit (429)")
+            401, 403 -> throw AuthException("GitHub Models auth error (${response.code()}) — check PAT has models:read permission")
+            else -> throw Exception("GitHub Models error ${response.code()}")
         }
     }
 }

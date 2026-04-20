@@ -92,13 +92,4 @@ class SettingsPrefs @Inject constructor(@ApplicationContext context: Context) {
             }
         }
         set(v) = prefs.edit().putString("ai_providers", providerAdapter.toJson(v)).apply()
-
-    /** Cached Copilot session token (expires after ~30 min, refreshed automatically). */
-    var copilotSessionToken: String
-        get() = prefs.getString("copilot_session_token", "") ?: ""
-        set(v) = prefs.edit().putString("copilot_session_token", v).apply()
-
-    var copilotSessionTokenExpiresAt: Long
-        get() = prefs.getLong("copilot_token_expires_at", 0L)
-        set(v) = prefs.edit().putLong("copilot_token_expires_at", v).apply()
 }

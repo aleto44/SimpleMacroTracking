@@ -5,8 +5,7 @@ import androidx.room.Room
 import com.example.simplemacrotracking.data.db.AppDatabase
 import com.example.simplemacrotracking.data.network.GeminiApi
 import com.example.simplemacrotracking.data.network.OpenFoodFactsApi
-import com.example.simplemacrotracking.data.network.CopilotApi
-import com.example.simplemacrotracking.data.network.GitHubApi
+import com.example.simplemacrotracking.data.network.GitHubModelsApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -61,14 +60,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    @Named("gemini")
-    fun provideGeminiOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+    @Named("ai")
+    fun provideAiOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)  // AI models can take time to respond
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    // ── Network (two separate base URLs) ──────────────────────────
+    // ── OpenFoodFacts ─────────────────────────────────────────────
     @Provides
     @Singleton
     @Named("openfoodfacts")
@@ -80,8 +79,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideOpenFoodFactsApi(@Named("openfoodfacts") r: Retrofit): OpenFoodFactsApi =
+        r.create(OpenFoodFactsApi::class.java)
+
+    // ── Gemini ────────────────────────────────────────────────────
+    @Provides
+    @Singleton
     @Named("gemini")
-    fun provideGeminiRetrofit(moshi: Moshi, @Named("gemini") client: OkHttpClient): Retrofit = Retrofit.Builder()
+    fun provideGeminiRetrofit(moshi: Moshi, @Named("ai") client: OkHttpClient): Retrofit = Retrofit.Builder()
         .baseUrl("https://generativelanguage.googleapis.com/")
         .client(client)
         .addConverterFactory(MoshiConverterFactory.create(moshi))
@@ -89,56 +94,21 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOpenFoodFactsApi(@Named("openfoodfacts") r: Retrofit): OpenFoodFactsApi =
-        r.create(OpenFoodFactsApi::class.java)
-
-    @Provides
-    @Singleton
     fun provideGeminiApi(@Named("gemini") r: Retrofit): GeminiApi =
         r.create(GeminiApi::class.java)
 
+    // ── GitHub Models ─────────────────────────────────────────────
     @Provides
     @Singleton
-    @Named("copilot")
-    fun provideCopilotOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
-
-    @Provides
-    @Singleton
-    @Named("copilot")
-    fun provideCopilotRetrofit(moshi: Moshi, @Named("copilot") client: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.githubcopilot.com/")
+    @Named("githubModels")
+    fun provideGitHubModelsRetrofit(moshi: Moshi, @Named("ai") client: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://models.github.ai/inference/")
         .client(client)
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
     @Provides
     @Singleton
-    fun provideCopilotApi(@Named("copilot") r: Retrofit): CopilotApi =
-        r.create(CopilotApi::class.java)
-
-    @Provides
-    @Singleton
-    @Named("github")
-    fun provideGitHubOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
-
-    /** Single GitHubApi handles both github.com (device-flow) and api.github.com.
-     *  We use the api.github.com base and rely on the full URL for github.com calls. */
-    @Provides
-    @Singleton
-    fun provideGitHubApi(@Named("github") client: OkHttpClient, moshi: Moshi): GitHubApi {
-        return Retrofit.Builder()
-            .baseUrl("https://api.github.com/")
-            .client(client)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-            .create(GitHubApi::class.java)
-    }
+    fun provideGitHubModelsApi(@Named("githubModels") r: Retrofit): GitHubModelsApi =
+        r.create(GitHubModelsApi::class.java)
 }
-
