@@ -20,7 +20,11 @@ class FoodRepository @Inject constructor(
 
     fun getAllFoodItems(): Flow<List<FoodItem>> = dao.getAllFoodItems()
 
+    fun getAllFoodItemsSortedByLastDiary(): Flow<List<FoodItem>> = dao.getAllFoodItemsSortedByLastDiary()
+
     fun searchFoodItems(query: String): Flow<List<FoodItem>> = dao.searchFoodItems(query)
+
+    fun searchFoodItemsSortedByLastDiary(query: String): Flow<List<FoodItem>> = dao.searchFoodItemsSortedByLastDiary(query)
 
     suspend fun getFoodItemById(id: Long): FoodItem? = dao.getFoodItemById(id)
 

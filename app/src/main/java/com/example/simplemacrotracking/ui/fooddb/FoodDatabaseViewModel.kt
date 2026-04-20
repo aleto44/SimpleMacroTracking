@@ -34,8 +34,8 @@ class FoodDatabaseViewModel @Inject constructor(
     private fun observeItems() {
         viewModelScope.launch {
             _query.debounce(200).flatMapLatest { q ->
-                if (q.isBlank()) foodRepository.getAllFoodItems()
-                else foodRepository.searchFoodItems(q)
+                if (q.isBlank()) foodRepository.getAllFoodItemsSortedByLastDiary()
+                else foodRepository.searchFoodItemsSortedByLastDiary(q)
             }.collect { items ->
                 _uiState.update { it.copy(items = items, query = _query.value) }
             }
