@@ -39,7 +39,7 @@ Head to the [Releases](../../releases) page, download the latest `.apk` file, an
 
 ## Contributing / Adding Features
 
-Feel free to fork this repo and add whatever features you want. Pull requests are welcome.
+Feel free to fork this repo and do whatever you want. Pull requests are also welcome.
 
 ---
 
