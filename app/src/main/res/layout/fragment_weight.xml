@@ -62,6 +62,34 @@
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
+    <!-- Display filter chips -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginBottom="8dp">
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="false">
+
+            <com.google.android.material.chip.Chip android:id="@+id/chip_show_weight"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Weight" android:checked="true"
+                style="@style/Style.Macro.Chip" />
+            <com.google.android.material.chip.Chip android:id="@+id/chip_show_calories"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Calories" android:checked="true"
+                style="@style/Style.Macro.Chip" />
+            <com.google.android.material.chip.Chip android:id="@+id/chip_show_moving_avg"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Moving Avg"
+                style="@style/Style.Macro.Chip" />
+
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
     <!-- Line chart -->
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/line_chart"

@@ -15,6 +15,10 @@
     <color name="color_accent_green">#00C805</color>
     <color name="color_accent_red">#FF5000</color>
     <color name="color_accent_green_dim">#1A3D1B</color>
+    <color name="color_accent_orange">#FF8C00</color>
+    <color name="color_accent_orange_dim">#3D2800</color>
+    <color name="color_accent_green_ma">#80C8FF</color>
+    <color name="color_accent_orange_ma">#FFD580</color>
 
     <!-- Text -->
     <color name="color_text_primary">#FFFFFF</color>

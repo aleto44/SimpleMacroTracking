@@ -13,7 +13,9 @@ import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.WeightEntry
 import com.example.simplemacrotracking.databinding.FragmentWeightBinding
 import com.example.simplemacrotracking.ui.shared.AddWeightDialogFragment
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
@@ -45,8 +47,7 @@ class WeightFragment : Fragment() {
         setupEntriesList()
 
         binding.btnAddWeight.setOnClickListener {
-            AddWeightDialogFragment()
-                .show(parentFragmentManager, "add_weight")
+            AddWeightDialogFragment().show(parentFragmentManager, "add_weight")
         }
 
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -59,6 +60,16 @@ class WeightFragment : Fragment() {
                 else          -> TimeRange.M3
             }
             viewModel.setTimeRange(range)
+        }
+
+        binding.chipShowWeight.setOnCheckedChangeListener { _, checked ->
+            viewModel.setShowWeight(checked)
+        }
+        binding.chipShowCalories.setOnCheckedChangeListener { _, checked ->
+            viewModel.setShowCalories(checked)
+        }
+        binding.chipShowMovingAvg.setOnCheckedChangeListener { _, checked ->
+            viewModel.setShowMovingAverage(checked)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -74,16 +85,14 @@ class WeightFragment : Fragment() {
                 AddWeightDialogFragment.newEditInstance(entry)
                     .show(parentFragmentManager, "edit_weight")
             },
-            onDelete = { entry ->
-                viewModel.deleteWeightEntry(entry)
-            }
+            onDelete = { entry -> viewModel.deleteWeightEntry(entry) }
         )
         binding.rvWeightEntries.adapter = entryAdapter
     }
 
     private fun setupChart() {
         val textSecondary = resources.getColor(R.color.color_text_secondary, null)
-        val borderColor  = resources.getColor(R.color.color_border, null)
+        val borderColor   = resources.getColor(R.color.color_border, null)
 
         binding.lineChart.apply {
             description.isEnabled = false
@@ -93,7 +102,13 @@ class WeightFragment : Fragment() {
             setPinchZoom(false)
             setDrawGridBackground(false)
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            legend.isEnabled = false
+
+            legend.apply {
+                isEnabled = true
+                textColor = textSecondary
+                form = Legend.LegendForm.LINE
+                horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+            }
 
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
@@ -108,42 +123,140 @@ class WeightFragment : Fragment() {
                     } catch (e: Exception) { "" }
                 }
             }
+
             axisLeft.apply {
                 setDrawGridLines(true)
                 gridColor = borderColor
                 textColor = textSecondary
                 axisLineColor = borderColor
             }
-            axisRight.isEnabled = false
+
+            // Right axis will be configured per-render
+            axisRight.apply {
+                gridColor = borderColor
+                axisLineColor = borderColor
+            }
         }
     }
 
     private fun render(state: WeightUiState) {
-        updateChart(state.filteredEntries)
+        updateChart(state)
         updateStats(state.filteredEntries, state.allEntries)
-        // Show all entries newest-first in the list
         entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })
     }
 
-    private fun updateChart(entries: List<WeightEntry>) {
-        if (entries.isEmpty()) {
+    private fun movingAverage(entries: List<Pair<Float, Float>>, window: Int = 7): List<Entry> {
+        return entries.mapIndexed { i, (x, _) ->
+            val slice = entries.subList(maxOf(0, i - window + 1), i + 1)
+            Entry(x, slice.map { it.second }.average().toFloat())
+        }
+    }
+
+    private fun updateChart(state: WeightUiState) {
+        val weightGreen    = resources.getColor(R.color.color_accent_green, null)
+        val weightGreenDim = resources.getColor(R.color.color_accent_green_dim, null)
+        val weightMaColor  = resources.getColor(R.color.color_accent_green_ma, null)
+        val calOrange      = resources.getColor(R.color.color_accent_orange, null)
+        val calOrangeDim   = resources.getColor(R.color.color_accent_orange_dim, null)
+        val calMaColor     = resources.getColor(R.color.color_accent_orange_ma, null)
+        val textSecondary  = resources.getColor(R.color.color_text_secondary, null)
+
+        // Determine date range from filtered weight entries + matching calorie dates
+        val cutoff = state.filteredEntries.minOfOrNull { it.date }
+        val calEntries: List<Pair<Float, Float>> = if (cutoff != null) {
+            state.dailyCalories.entries
+                .filter { !it.key.isBefore(cutoff) }
+                .sortedBy { it.key }
+                .map { it.key.toEpochDay().toFloat() to it.value }
+        } else {
+            state.dailyCalories.entries
+                .sortedBy { it.key }
+                .map { it.key.toEpochDay().toFloat() to it.value }
+        }
+
+        val weightPairs: List<Pair<Float, Float>> = state.filteredEntries
+            .map { it.date.toEpochDay().toFloat() to it.value }
+
+        val dataSets = mutableListOf<LineDataSet>()
+
+        // Both weight & calories shown → enable right axis for calories
+        val bothShown = state.showWeight && state.showCalories
+        binding.lineChart.axisRight.apply {
+            isEnabled = bothShown
+            if (bothShown) {
+                textColor = calOrange
+                axisLineColor = calOrange
+            }
+        }
+        binding.lineChart.axisLeft.apply {
+            textColor = if (state.showWeight) weightGreen else textSecondary
+        }
+
+        if (state.showWeight) {
+            if (state.showMovingAverage) {
+                // Show MA line instead of raw
+                val maEntries = movingAverage(weightPairs)
+                dataSets += LineDataSet(maEntries, "Weight MA").apply {
+                    color = weightMaColor
+                    setCircleColor(weightMaColor)
+                    lineWidth = 2f
+                    circleRadius = 2f
+                    setDrawValues(false)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    axisDependency = YAxis.AxisDependency.LEFT
+                }
+            } else {
+                val entries = weightPairs.map { Entry(it.first, it.second) }
+                dataSets += LineDataSet(entries, "Weight").apply {
+                    color = weightGreen
+                    setCircleColor(weightGreen)
+                    lineWidth = 2f
+                    circleRadius = 3f
+                    setDrawValues(false)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    setDrawFilled(true)
+                    fillColor = weightGreenDim
+                    axisDependency = YAxis.AxisDependency.LEFT
+                }
+            }
+        }
+
+        if (state.showCalories && calEntries.isNotEmpty()) {
+            val axisDep = if (bothShown) YAxis.AxisDependency.RIGHT else YAxis.AxisDependency.LEFT
+            if (state.showMovingAverage) {
+                val maEntries = movingAverage(calEntries)
+                dataSets += LineDataSet(maEntries, "Calories MA").apply {
+                    color = calMaColor
+                    setCircleColor(calMaColor)
+                    lineWidth = 2f
+                    circleRadius = 2f
+                    setDrawValues(false)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    axisDependency = axisDep
+                }
+            } else {
+                val entries = calEntries.map { Entry(it.first, it.second) }
+                dataSets += LineDataSet(entries, "Calories").apply {
+                    color = calOrange
+                    setCircleColor(calOrange)
+                    lineWidth = 2f
+                    circleRadius = 3f
+                    setDrawValues(false)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    setDrawFilled(true)
+                    fillColor = calOrangeDim
+                    axisDependency = axisDep
+                }
+            }
+        }
+
+        if (dataSets.isEmpty()) {
             binding.lineChart.clear()
             binding.lineChart.invalidate()
             return
         }
-        val chartEntries = entries.map { Entry(it.date.toEpochDay().toFloat(), it.value) }
-        val accentGreen = resources.getColor(R.color.color_accent_green, null)
-        val dataSet = LineDataSet(chartEntries, "Weight").apply {
-            color = accentGreen
-            setCircleColor(accentGreen)
-            lineWidth = 2f
-            circleRadius = 3f
-            setDrawValues(false)
-            mode = LineDataSet.Mode.CUBIC_BEZIER
-            setDrawFilled(true)
-            fillColor = resources.getColor(R.color.color_accent_green_dim, null)
-        }
-        binding.lineChart.data = LineData(dataSet)
+
+        binding.lineChart.data = LineData(dataSets.toList())
         binding.lineChart.invalidate()
     }
 

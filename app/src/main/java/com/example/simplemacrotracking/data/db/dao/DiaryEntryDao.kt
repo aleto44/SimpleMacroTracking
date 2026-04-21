@@ -31,6 +31,10 @@ interface DiaryEntryDao {
     @Query("SELECT * FROM diary_entries ORDER BY date ASC")
     suspend fun getAllEntriesWithFood(): List<DiaryEntryWithFood>
 
+    @Transaction
+    @Query("SELECT * FROM diary_entries ORDER BY date ASC")
+    fun streamAllEntriesWithFood(): Flow<List<DiaryEntryWithFood>>
+
     @Query("SELECT * FROM diary_entries WHERE date = :date AND foodItemId = :foodItemId LIMIT 1")
     suspend fun getEntryForDateAndFood(date: String, foodItemId: Long): DiaryEntry?
 }

@@ -26,6 +26,8 @@ class DiaryRepository @Inject constructor(private val dao: DiaryEntryDao) {
 
     suspend fun getAllEntriesWithFood(): List<DiaryEntryWithFood> = dao.getAllEntriesWithFood()
 
+    fun streamAllEntriesWithFood(): Flow<List<DiaryEntryWithFood>> = dao.streamAllEntriesWithFood()
+
     suspend fun getEntryForDateAndFood(date: String, foodItemId: Long): DiaryEntry? =
         dao.getEntryForDateAndFood(date, foodItemId)
 }
