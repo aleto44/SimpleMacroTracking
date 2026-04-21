@@ -7,12 +7,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FoodItemDao {
 
-    @Query("SELECT * FROM food_items ORDER BY name ASC")
+    @Query("SELECT * FROM food_items WHERE source != 'IMPORT' ORDER BY name ASC")
     fun getAllFoodItems(): Flow<List<FoodItem>>
 
     @Query("""
         SELECT food_items.* FROM food_items
         LEFT JOIN diary_entries ON food_items.id = diary_entries.foodItemId
+        WHERE food_items.source != 'IMPORT'
         GROUP BY food_items.id
         ORDER BY
             CASE WHEN MAX(diary_entries.date) IS NULL THEN 1 ELSE 0 END,
@@ -21,13 +22,13 @@ interface FoodItemDao {
     """)
     fun getAllFoodItemsSortedByLastDiary(): Flow<List<FoodItem>>
 
-    @Query("SELECT * FROM food_items WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query("SELECT * FROM food_items WHERE source != 'IMPORT' AND name LIKE '%' || :query || '%' ORDER BY name ASC")
     fun searchFoodItems(query: String): Flow<List<FoodItem>>
 
     @Query("""
         SELECT food_items.* FROM food_items
         LEFT JOIN diary_entries ON food_items.id = diary_entries.foodItemId
-        WHERE food_items.name LIKE '%' || :query || '%'
+        WHERE food_items.source != 'IMPORT' AND food_items.name LIKE '%' || :query || '%'
         GROUP BY food_items.id
         ORDER BY
             CASE WHEN MAX(diary_entries.date) IS NULL THEN 1 ELSE 0 END,
@@ -54,4 +55,3 @@ interface FoodItemDao {
     @Delete
     suspend fun deleteFoodItem(item: FoodItem)
 }
-

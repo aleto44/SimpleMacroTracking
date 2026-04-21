@@ -20,6 +20,7 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -56,7 +57,8 @@ class WeightFragment : Fragment() {
                 R.id.chip_1m  -> TimeRange.M1
                 R.id.chip_3m  -> TimeRange.M3
                 R.id.chip_1y  -> TimeRange.Y1
-                R.id.chip_all -> TimeRange.ALL
+                R.id.chip_3y  -> TimeRange.Y3
+                R.id.chip_5y  -> TimeRange.Y5
                 else          -> TimeRange.M3
             }
             viewModel.setTimeRange(range)
@@ -85,7 +87,14 @@ class WeightFragment : Fragment() {
                 AddWeightDialogFragment.newEditInstance(entry)
                     .show(parentFragmentManager, "edit_weight")
             },
-            onDelete = { entry -> viewModel.deleteWeightEntry(entry) }
+            onDelete = { entry ->
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Entry")
+                    .setMessage("Delete the weight entry for ${entry.date}?")
+                    .setPositiveButton("Delete") { _, _ -> viewModel.deleteWeightEntry(entry) }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
         )
         binding.rvWeightEntries.adapter = entryAdapter
     }

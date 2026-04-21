@@ -55,7 +55,12 @@
             <com.google.android.material.chip.Chip android:id="@+id/chip_1y"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="1Y" style="@style/Style.Macro.Chip" />
-            <com.google.android.material.chip.Chip android:id="@+id/chip_all"
+            <com.google.android.material.chip.Chip android:id="@+id/chip_3y"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="3Y" style="@style/Style.Macro.Chip" />
+            <com.google.android.material.chip.Chip android:id="@+id/chip_5y"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="5Y" style="@style/Style.Macro.Chip" />
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="All" style="@style/Style.Macro.Chip" />
 

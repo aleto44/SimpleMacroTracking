@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
-enum class TimeRange { W1, M1, M3, Y1, ALL }
+enum class TimeRange { W1, M1, M3, Y1, Y3, Y5, ALL }
 
 data class WeightUiState(
     val allEntries: List<WeightEntry> = emptyList(),
@@ -80,6 +80,8 @@ class WeightViewModel @Inject constructor(
             TimeRange.M1  -> LocalDate.now().minusMonths(1)
             TimeRange.M3  -> LocalDate.now().minusMonths(3)
             TimeRange.Y1  -> LocalDate.now().minusYears(1)
+            TimeRange.Y3  -> LocalDate.now().minusYears(3)
+            TimeRange.Y5  -> LocalDate.now().minusYears(5)
             TimeRange.ALL -> LocalDate.MIN
         }
         return entries.filter { !it.date.isBefore(cutoff) }
