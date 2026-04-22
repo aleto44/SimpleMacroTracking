@@ -24,10 +24,16 @@ class MacroProgressView @JvmOverloads constructor(
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
 
+    /** When true, uses the one-sided protein scale (green at/above goal). */
+    var isProteinMode: Boolean = false
+
     var ratio: Float = 0f
         set(value) {
             field = value.coerceAtLeast(0f)
-            fillPaint.color = ColorUtil.getRatioColor(value)
+            fillPaint.color = if (isProteinMode)
+                ColorUtil.getProteinRatioColor(value)
+            else
+                ColorUtil.getRatioColor(value)
             invalidate()
         }
 

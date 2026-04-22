@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.simplemacrotracking.util.ColorUtil
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
@@ -221,12 +222,7 @@ class DiaryFragment : Fragment() {
         binding.progressCalories.ratio = calRatio
         binding.tvCaloriesHero.text = calConsumed.toString()
         binding.tvCaloriesRemaining.text = if (calRemaining >= 0) "$calRemaining remaining" else "${-calRemaining} over"
-        binding.tvCaloriesRemaining.setTextColor(
-            if (calRemaining >= 0)
-                requireContext().getColor(R.color.color_accent_green)
-            else
-                requireContext().getColor(R.color.color_accent_red)
-        )
+        binding.tvCaloriesRemaining.setTextColor(ColorUtil.getRatioColor(calRatio))
         binding.tvCaloriesGoalLabel.text = "/ ${calGoal} kcal goal"
         // Keep hidden tv_calories in sync for any code that reads it
         binding.tvCalories.text = "$calConsumed / $calGoal kcal"
@@ -236,6 +232,7 @@ class DiaryFragment : Fragment() {
         binding.rowProtein.visibility = if (hasProteinGoal) View.VISIBLE else View.GONE
         binding.progressProtein.visibility = if (hasProteinGoal) View.VISIBLE else View.GONE
         if (hasProteinGoal) {
+            binding.progressProtein.isProteinMode = true
             binding.progressProtein.ratio = state.consumed.proteinG / state.goals.proteinG
             binding.tvProtein.text = "%.0fg / %.0fg".format(state.consumed.proteinG, state.goals.proteinG)
         }

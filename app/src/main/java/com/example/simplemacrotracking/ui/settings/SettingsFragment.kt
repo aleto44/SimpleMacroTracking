@@ -42,12 +42,17 @@ class SettingsFragment : Fragment() {
 
     private val importLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri ?: return@registerForActivityResult
-        viewLifecycleOwner.lifecycleScope.launch {
+        // Use fragment's lifecycleScope (not viewLifecycleOwner) so the import continues
+        // even if the user navigates away mid-import, preventing a crash from a destroyed view.
+        val appContext = requireContext().applicationContext
+        lifecycleScope.launch {
             val result = CsvImporter.importCsv(
-                requireContext(), uri, foodRepository, diaryRepository, weightRepository
+                appContext, uri, foodRepository, diaryRepository, weightRepository
             )
+            // Only show the Snackbar if the view is still alive
+            val root = _binding?.root ?: return@launch
             Snackbar.make(
-                binding.root,
+                root,
                 "Imported ${result.imported} entries, ${result.skipped} rows skipped",
                 Snackbar.LENGTH_LONG
             ).show()

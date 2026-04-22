@@ -5,22 +5,35 @@ import android.graphics.Color
 object ColorUtil {
     /**
      * Returns an HSV-interpolated color for a macro progress ratio.
-     *  0%  → red
-     *  70% → amber
-     * 100% → green
-     * >100% → fades back toward red at 200%
+     *
+     * Color scale is centred on the goal (ratio = 1.0 = pure green).
+     * The transition band is ±25% of the goal:
+     *   ≤ 0.75  → fully red   (hue = 0°)
+     *   0.75–1.0 → red → green (hue 0° → 120°)
+     *   1.0      → fully green (hue = 120°)
+     *   1.0–1.25 → green → red (hue 120° → 0°)
+     *   ≥ 1.25  → fully red   (hue = 0°)
+     */
+    /**
+     * Symmetric scale for calories, carbs, and fat.
+     * Green at goal, fades to red ±25% away in either direction.
      */
     fun getRatioColor(ratio: Float): Int {
-        val clamped = ratio.coerceIn(0f, 2f)
-        return if (clamped <= 1f) {
-            // Red (hue=0) → Amber (hue=42) → Green (hue=120) as ratio goes 0→1
-            val hue = clamped * 120f
-            Color.HSVToColor(floatArrayOf(hue, 0.75f, 0.85f))
-        } else {
-            // Over goal: green fades back toward red as ratio approaches 2
-            val hue = (2f - clamped) * 120f
-            Color.HSVToColor(floatArrayOf(hue, 0.85f, 0.80f))
-        }
+        val distanceFromGoal = Math.abs(ratio - 1f)
+        val t = (distanceFromGoal / 0.25f).coerceIn(0f, 1f)
+        val hue = (1f - t) * 120f
+        return Color.HSVToColor(floatArrayOf(hue, 0.80f, 0.85f))
+    }
+
+    /**
+     * One-sided scale for protein.
+     * Green at goal or above, fades to red only when 25%+ under goal.
+     */
+    fun getProteinRatioColor(ratio: Float): Int {
+        if (ratio >= 1f) return Color.HSVToColor(floatArrayOf(120f, 0.80f, 0.85f))
+        val t = ((1f - ratio) / 0.25f).coerceIn(0f, 1f)
+        val hue = (1f - t) * 120f
+        return Color.HSVToColor(floatArrayOf(hue, 0.80f, 0.85f))
     }
 }
 
