@@ -23,7 +23,7 @@ A lightweight Android app for tracking daily nutrition and weight — built for 
 
 - [+] **Daily Diary** — log meals, track calories & macros, navigate by date
 - [+] **Barcode Scanner** — scan packaged food to pull nutrition data automatically
-- [+] **AI Entry** — describe any food in plain English and let Gemini fill in the macros [you supply your own api key (you can generate one for free at https://developers.generativeai.google.dev/)]
+- [+] **AI Entry** — describe any food in plain English [BYOK, gemeni and Github Models supported]
 - [+] **Voice Logging** — say "add chicken breast 150 grams" and it's logged
 - [+] **Weight Tracker** — log weight, view a line chart, filter by time range
 - [+] **Macro Progress Bars** — visual progress toward your daily goals
