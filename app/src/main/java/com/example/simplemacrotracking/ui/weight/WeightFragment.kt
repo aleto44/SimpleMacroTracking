@@ -331,6 +331,7 @@ class WeightFragment : Fragment() {
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     axisDependency = YAxis.AxisDependency.LEFT
+                    setDrawHighlightIndicators(false)
                 }
             } else {
                 val entries = weightPairs.map { Entry(it.first, it.second) }
@@ -344,6 +345,7 @@ class WeightFragment : Fragment() {
                     setDrawFilled(true)
                     fillColor = weightGreenDim
                     axisDependency = YAxis.AxisDependency.LEFT
+                    setDrawHighlightIndicators(false)
                 }
             }
         }
@@ -360,6 +362,7 @@ class WeightFragment : Fragment() {
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     axisDependency = axisDep
+                    setDrawHighlightIndicators(false)
                 }
             } else {
                 val entries = calEntries.map { Entry(it.first, it.second) }
@@ -373,6 +376,7 @@ class WeightFragment : Fragment() {
                     setDrawFilled(true)
                     fillColor = calOrangeDim
                     axisDependency = axisDep
+                    setDrawHighlightIndicators(false)
                 }
             }
         }
