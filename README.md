@@ -1,5 +1,5 @@
 
-**I hate MyFitnessPal, I hate ads, I hate pay walling brain dead features (barcode scanner)**
+**I hate MyFitnessPal, I hate ads, I hate pay-walling brain dead features (barcode scanner)**
 
 **Open source. No account. No ads. Your data never leaves your phone.**
 
