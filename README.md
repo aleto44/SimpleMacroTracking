@@ -7,18 +7,6 @@ A lightweight Android app for tracking daily nutrition and weight — built for 
 
 ---
 
-```
-  _____ _                 _        __  __
- / ____(_)               | |      |  \/  |
-| (___  _ _ __ ___  _ __ | | ___  | \  / | __ _  ___ _ __ ___
- \___ \| | '_ ` _ \| '_ \| |/ _ \ | |\/| |/ _` |/ __| '__/ _ \
- ____) | | | | | | | |_) | |  __/ | |  | | (_| | (__| | | (_) |
-|_____/|_|_| |_| |_| .__/|_|\___| |_|  |_|\__,_|\___|_|  \___/
-  T r a c k i n g  | |
-                   |_|
-```
-
-
 ## Features
 
 - [+] **Daily Diary** — log meals, track calories & macros, navigate by date
@@ -39,36 +27,16 @@ Head to the [Releases](../../releases) page, download the latest `.apk` file, an
 > You may need to allow installs from unknown sources under **Settings -> Install Unknown Apps**.
 > Requires Android 8.0 or newer.
 
----
-
-## Contributing / Adding Features
-
-Feel free to fork this repo and do whatever you want. Pull requests are also welcome.
-
----
-
-## Tech Stack
-
 ```
-Language      Kotlin
-Architecture  MVVM + StateFlow
-DI            Hilt
-Database      Room
-Networking    Retrofit
-Barcode       ZXing
-Charts        MPAndroidChart
-AI            Google Gemini API
-Food Data     OpenFoodFacts
-Security      EncryptedSharedPreferences (AES-256)
+  _____ _                 _        __  __
+ / ____(_)               | |      |  \/  |
+| (___  _ _ __ ___  _ __ | | ___  | \  / | __ _  ___ _ __ ___
+ \___ \| | '_ ` _ \| '_ \| |/ _ \ | |\/| |/ _` |/ __| '__/ _ \
+ ____) | | | | | | | |_) | |  __/ | |  | | (_| | (__| | | (_) |
+|_____/|_|_| |_| |_| .__/|_|\___| |_|  |_|\__,_|\___|_|  \___/
+  T r a c k i n g  | |
+                   |_|
 ```
-
----
-
-## License
-
-Open source -- do whatever you want with it.
-
----
 
 ## Screenshots
 
@@ -96,7 +64,34 @@ Open source -- do whatever you want with it.
   </tr>
 </table>
 
+---
 
+## Contributing / Adding Features
+
+Feel free to fork this repo and do whatever you want. Pull requests are also welcome.
+
+---
+
+## License
+
+Open source -- do whatever you want with it.
+
+---
+
+## Tech Stack
+
+```
+Language      Kotlin
+Architecture  MVVM + StateFlow
+DI            Hilt
+Database      Room
+Networking    Retrofit
+Barcode       ZXing
+Charts        MPAndroidChart
+AI            Google Gemini API
+Food Data     OpenFoodFacts
+Security      EncryptedSharedPreferences (AES-256)
+```
 
 
 
