@@ -8,6 +8,7 @@
     <!-- Backgrounds -->
     <color name="color_bg_primary">#0A0A0A</color>
     <color name="color_bg_surface">#111111</color>
+    <color name="color_bg_secondary">#141414</color>
     <color name="color_bg_elevated">#1A1A1A</color>
     <color name="color_border">#1E1E1E</color>
 
@@ -17,8 +18,8 @@
     <color name="color_accent_green_dim">#1A3D1B</color>
     <color name="color_accent_orange">#FF8C00</color>
     <color name="color_accent_orange_dim">#3D2800</color>
-    <color name="color_accent_green_ma">#80C8FF</color>
-    <color name="color_accent_orange_ma">#FFD580</color>
+    <color name="color_accent_green_ma">#007A03</color>
+    <color name="color_accent_orange_ma">#B35F00</color>
 
     <!-- Text -->
     <color name="color_text_primary">#FFFFFF</color>

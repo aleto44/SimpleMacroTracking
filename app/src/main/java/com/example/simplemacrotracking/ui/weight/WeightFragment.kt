@@ -20,11 +20,15 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.listener.ChartTouchListener
+import com.github.mikephil.charting.listener.OnChartGestureListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.slider.Slider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import android.view.MotionEvent
 
 @AndroidEntryPoint
 class WeightFragment : Fragment() {
@@ -33,6 +37,12 @@ class WeightFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: WeightViewModel by viewModels()
     private lateinit var entryAdapter: WeightEntryAdapter
+    /** True while we are programmatically pushing data into the chart — suppresses gesture callbacks. */
+    private var isUpdatingChart = false
+    /** Data-space X value where the user's drag started. NaN when no drag is in progress. */
+    private var dragStartDataX: Float = Float.NaN
+    /** Pixel X where the drag started (for the selection overlay). NaN when idle. */
+    private var dragStartPixelX: Float = Float.NaN
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -51,6 +61,21 @@ class WeightFragment : Fragment() {
             AddWeightDialogFragment().show(parentFragmentManager, "add_weight")
         }
 
+        // Cog wheel: toggle chart settings panel
+        binding.btnChartSettings.setOnClickListener {
+            val panel = binding.layoutChartSettings
+            panel.visibility = if (panel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
+
+        // MA days slider
+        binding.sliderMaDays.addOnChangeListener(Slider.OnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                val days = value.toInt()
+                binding.tvMaDaysLabel.text = "$days days"
+                viewModel.setMovingAverageDays(days)
+            }
+        })
+
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             val range = when (checkedIds.firstOrNull()) {
                 R.id.chip_1w  -> TimeRange.W1
@@ -59,6 +84,7 @@ class WeightFragment : Fragment() {
                 R.id.chip_1y  -> TimeRange.Y1
                 R.id.chip_3y  -> TimeRange.Y3
                 R.id.chip_5y  -> TimeRange.Y5
+                R.id.chip_all -> TimeRange.ALL
                 else          -> TimeRange.M3
             }
             viewModel.setTimeRange(range)
@@ -107,7 +133,7 @@ class WeightFragment : Fragment() {
             description.isEnabled = false
             setTouchEnabled(true)
             isDragEnabled = true
-            setScaleEnabled(true)
+            setScaleEnabled(false)
             setPinchZoom(false)
             setDrawGridBackground(false)
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -125,12 +151,6 @@ class WeightFragment : Fragment() {
                 granularity = 1f
                 textColor = textSecondary
                 axisLineColor = borderColor
-                valueFormatter = object : ValueFormatter() {
-                    private val fmt = DateTimeFormatter.ofPattern("MMM d")
-                    override fun getFormattedValue(value: Float): String = try {
-                        LocalDate.ofEpochDay(value.toLong()).format(fmt)
-                    } catch (e: Exception) { "" }
-                }
             }
 
             axisLeft.apply {
@@ -140,10 +160,70 @@ class WeightFragment : Fragment() {
                 axisLineColor = borderColor
             }
 
-            // Right axis will be configured per-render
             axisRight.apply {
                 gridColor = borderColor
                 axisLineColor = borderColor
+            }
+
+            // Capture drag start position in data-space for drag-to-zoom
+            // and pixel position for the selection overlay
+            setOnTouchListener { _, event ->
+                if (!isUpdatingChart) {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            val pt = getTransformer(YAxis.AxisDependency.LEFT)
+                                .getValuesByTouchPoint(event.x, event.y)
+                            dragStartDataX = pt.x.toFloat()
+                            dragStartPixelX = event.x
+                            binding.chartSelectionOverlay.clearSelection()
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            if (!dragStartPixelX.isNaN()) {
+                                binding.chartSelectionOverlay.updateSelection(dragStartPixelX, event.x)
+                            }
+                        }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            binding.chartSelectionOverlay.clearSelection()
+                        }
+                    }
+                }
+                false // let the chart handle all touch events normally
+            }
+
+            // Drag-to-zoom: on drag end, filter data to the dragged range
+            onChartGestureListener = object : OnChartGestureListener {
+                override fun onChartGestureStart(me: MotionEvent?, lastPerformedGesture: ChartTouchListener.ChartGesture?) {}
+                override fun onChartLongPressed(me: MotionEvent?) {}
+                override fun onChartDoubleTapped(me: MotionEvent?) {}
+                override fun onChartSingleTapped(me: MotionEvent?) {}
+                override fun onChartFling(me1: MotionEvent?, me2: MotionEvent?, velocityX: Float, velocityY: Float) {}
+                override fun onChartScale(me: MotionEvent?, scaleX: Float, scaleY: Float) {}
+                override fun onChartTranslate(me: MotionEvent?, dX: Float, dY: Float) {}
+
+                override fun onChartGestureEnd(me: MotionEvent?, lastPerformedGesture: ChartTouchListener.ChartGesture?) {
+                    if (isUpdatingChart) return
+                    if (lastPerformedGesture == ChartTouchListener.ChartGesture.DRAG && me != null) {
+                        val endPt = binding.lineChart.getTransformer(YAxis.AxisDependency.LEFT)
+                            .getValuesByTouchPoint(me.x, me.y)
+                        val endDataX = endPt.x.toFloat()
+                        val startDataX = dragStartDataX
+                        dragStartDataX = Float.NaN
+                        dragStartPixelX = Float.NaN
+                        binding.chartSelectionOverlay.clearSelection()
+                        // Only zoom if the drag covered more than 1 day
+                        if (!startDataX.isNaN() && Math.abs(endDataX - startDataX) > 1f) {
+                            try {
+                                val start = LocalDate.ofEpochDay(minOf(startDataX, endDataX).toLong())
+                                val end   = LocalDate.ofEpochDay(maxOf(startDataX, endDataX).toLong())
+                                viewModel.setCustomDateRange(start, end)
+                            } catch (_: Exception) {}
+                        }
+                    } else {
+                        dragStartDataX = Float.NaN
+                        dragStartPixelX = Float.NaN
+                        binding.chartSelectionOverlay.clearSelection()
+                    }
+                }
             }
         }
     }
@@ -154,7 +234,7 @@ class WeightFragment : Fragment() {
         entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })
     }
 
-    private fun movingAverage(entries: List<Pair<Float, Float>>, window: Int = 7): List<Entry> {
+    private fun movingAverage(entries: List<Pair<Float, Float>>, window: Int): List<Entry> {
         return entries.mapIndexed { i, (x, _) ->
             val slice = entries.subList(maxOf(0, i - window + 1), i + 1)
             Entry(x, slice.map { it.second }.average().toFloat())
@@ -170,25 +250,35 @@ class WeightFragment : Fragment() {
         val calMaColor     = resources.getColor(R.color.color_accent_orange_ma, null)
         val textSecondary  = resources.getColor(R.color.color_text_secondary, null)
 
-        // Determine date range from filtered weight entries + matching calorie dates
-        val cutoff = state.filteredEntries.minOfOrNull { it.date }
-        val calEntries: List<Pair<Float, Float>> = if (cutoff != null) {
-            state.dailyCalories.entries
-                .filter { !it.key.isBefore(cutoff) }
-                .sortedBy { it.key }
-                .map { it.key.toEpochDay().toFloat() to it.value }
-        } else {
-            state.dailyCalories.entries
-                .sortedBy { it.key }
-                .map { it.key.toEpochDay().toFloat() to it.value }
+        val today = LocalDate.now()
+
+        // Compute the calorie cutoff from the active range, NOT from weight entries.
+        // This way calories are always filtered to the same window even when weight data is sparse.
+        val calCutoff: LocalDate? = state.customRange?.first ?: when (state.timeRange) {
+            TimeRange.W1  -> today.minusWeeks(1)
+            TimeRange.M1  -> today.minusMonths(1)
+            TimeRange.M3  -> today.minusMonths(3)
+            TimeRange.Y1  -> today.minusYears(1)
+            TimeRange.Y3  -> today.minusYears(3)
+            TimeRange.Y5  -> today.minusYears(5)
+            TimeRange.ALL -> null
         }
+        val calEnd: LocalDate? = state.customRange?.second
+
+        val calEntries: List<Pair<Float, Float>> = state.dailyCalories.entries
+            .filter { (date, _) ->
+                date != today &&
+                (calCutoff == null || !date.isBefore(calCutoff)) &&
+                (calEnd   == null || !date.isAfter(calEnd))
+            }
+            .sortedBy { it.key }
+            .map { it.key.toEpochDay().toFloat() to it.value }
 
         val weightPairs: List<Pair<Float, Float>> = state.filteredEntries
             .map { it.date.toEpochDay().toFloat() to it.value }
 
         val dataSets = mutableListOf<LineDataSet>()
 
-        // Both weight & calories shown → enable right axis for calories
         val bothShown = state.showWeight && state.showCalories
         binding.lineChart.axisRight.apply {
             isEnabled = bothShown
@@ -203,8 +293,7 @@ class WeightFragment : Fragment() {
 
         if (state.showWeight) {
             if (state.showMovingAverage) {
-                // Show MA line instead of raw
-                val maEntries = movingAverage(weightPairs)
+                val maEntries = movingAverage(weightPairs, state.movingAverageDays)
                 dataSets += LineDataSet(maEntries, "Weight MA").apply {
                     color = weightMaColor
                     setCircleColor(weightMaColor)
@@ -233,7 +322,7 @@ class WeightFragment : Fragment() {
         if (state.showCalories && calEntries.isNotEmpty()) {
             val axisDep = if (bothShown) YAxis.AxisDependency.RIGHT else YAxis.AxisDependency.LEFT
             if (state.showMovingAverage) {
-                val maEntries = movingAverage(calEntries)
+                val maEntries = movingAverage(calEntries, state.movingAverageDays)
                 dataSets += LineDataSet(maEntries, "Calories MA").apply {
                     color = calMaColor
                     setCircleColor(calMaColor)
@@ -266,7 +355,24 @@ class WeightFragment : Fragment() {
         }
 
         binding.lineChart.data = LineData(dataSets.toList())
+
+        // Dynamic x-axis label format based on visible span
+        val allXValues = (weightPairs.map { it.first } + calEntries.map { it.first })
+        val spanDays = if (allXValues.size >= 2) allXValues.max() - allXValues.min() else 0f
+        val useYearOnly = spanDays > 548f  // > ~1.5 years
+        binding.lineChart.xAxis.valueFormatter = object : ValueFormatter() {
+            private val fmtShort = DateTimeFormatter.ofPattern("MMM d")
+            private val fmtYear  = DateTimeFormatter.ofPattern("yyyy")
+            override fun getFormattedValue(value: Float): String = try {
+                val date = LocalDate.ofEpochDay(value.toLong())
+                if (useYearOnly) date.format(fmtYear) else date.format(fmtShort)
+            } catch (e: Exception) { "" }
+        }
+
+        isUpdatingChart = true
+        binding.lineChart.fitScreen()
         binding.lineChart.invalidate()
+        isUpdatingChart = false
     }
 
     private fun updateStats(filtered: List<WeightEntry>, all: List<WeightEntry>) {

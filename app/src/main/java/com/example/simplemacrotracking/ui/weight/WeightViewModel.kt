@@ -21,6 +21,8 @@ data class WeightUiState(
     val showWeight: Boolean = true,
     val showCalories: Boolean = true,
     val showMovingAverage: Boolean = false,
+    val movingAverageDays: Int = 7,
+    val customRange: Pair<LocalDate, LocalDate>? = null,
     val isLoading: Boolean = false
 )
 
@@ -36,7 +38,7 @@ class WeightViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             weightRepository.getAllWeightEntries().collect { entries ->
-                val filtered = filterEntries(entries, _uiState.value.timeRange)
+                val filtered = filterEntries(entries, _uiState.value.timeRange, _uiState.value.customRange)
                 _uiState.update { it.copy(allEntries = entries, filteredEntries = filtered) }
             }
         }
@@ -54,13 +56,19 @@ class WeightViewModel @Inject constructor(
     }
 
     fun setTimeRange(range: TimeRange) {
-        val filtered = filterEntries(_uiState.value.allEntries, range)
-        _uiState.update { it.copy(timeRange = range, filteredEntries = filtered) }
+        val filtered = filterEntries(_uiState.value.allEntries, range, null)
+        _uiState.update { it.copy(timeRange = range, filteredEntries = filtered, customRange = null) }
     }
 
     fun setShowWeight(show: Boolean) { _uiState.update { it.copy(showWeight = show) } }
     fun setShowCalories(show: Boolean) { _uiState.update { it.copy(showCalories = show) } }
     fun setShowMovingAverage(show: Boolean) { _uiState.update { it.copy(showMovingAverage = show) } }
+    fun setMovingAverageDays(days: Int) { _uiState.update { it.copy(movingAverageDays = days) } }
+
+    fun setCustomDateRange(start: LocalDate, end: LocalDate) {
+        val filtered = filterEntries(_uiState.value.allEntries, _uiState.value.timeRange, start to end)
+        _uiState.update { it.copy(customRange = start to end, filteredEntries = filtered) }
+    }
 
     fun addWeightEntry(entry: WeightEntry) {
         viewModelScope.launch { weightRepository.insertWeightEntry(entry) }
@@ -74,7 +82,14 @@ class WeightViewModel @Inject constructor(
         viewModelScope.launch { weightRepository.deleteWeightEntry(entry) }
     }
 
-    private fun filterEntries(entries: List<WeightEntry>, range: TimeRange): List<WeightEntry> {
+    private fun filterEntries(
+        entries: List<WeightEntry>,
+        range: TimeRange,
+        custom: Pair<LocalDate, LocalDate>?
+    ): List<WeightEntry> {
+        if (custom != null) {
+            return entries.filter { !it.date.isBefore(custom.first) && !it.date.isAfter(custom.second) }
+        }
         val cutoff = when (range) {
             TimeRange.W1  -> LocalDate.now().minusWeeks(1)
             TimeRange.M1  -> LocalDate.now().minusMonths(1)

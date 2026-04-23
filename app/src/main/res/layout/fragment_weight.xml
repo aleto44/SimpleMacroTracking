@@ -22,6 +22,14 @@
             android:text="WEIGHT LOG"
             android:textAppearance="@style/TextAppearance.Macro.SectionLabel"
             android:textSize="14sp" />
+        <ImageButton
+            android:id="@+id/btn_chart_settings"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_settings"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Chart settings" />
         <Button
             android:id="@+id/btn_add_weight"
             android:layout_width="wrap_content"
@@ -61,6 +69,7 @@
             <com.google.android.material.chip.Chip android:id="@+id/chip_5y"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="5Y" style="@style/Style.Macro.Chip" />
+            <com.google.android.material.chip.Chip android:id="@+id/chip_all"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="All" style="@style/Style.Macro.Chip" />
 
@@ -95,12 +104,68 @@
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
-    <!-- Line chart -->
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/line_chart"
+    <!-- Line chart with drag-selection overlay -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="4dp">
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/line_chart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.example.simplemacrotracking.ui.weight.ChartSelectionOverlay
+            android:id="@+id/chart_selection_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"
+            android:focusable="false" />
+
+    </FrameLayout>
+
+    <!-- Chart settings panel (collapsible) -->
+    <LinearLayout
+        android:id="@+id/layout_chart_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="@color/color_bg_secondary"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Moving Average Window"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tv_ma_days_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7 days"
+                android:textColor="@color/color_text_primary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_ma_days"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="2"
+            android:valueTo="30"
+            android:stepSize="1"
+            android:value="7" />
+
+    </LinearLayout>
 
     <View android:layout_width="match_parent" android:layout_height="1dp"
         android:background="@color/color_border" android:layout_marginBottom="8dp" />
