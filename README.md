@@ -1,4 +1,13 @@
-
+```
+  _____ _                 _        __  __
+ / ____(_)               | |      |  \/  |
+| (___  _ _ __ ___  _ __ | | ___  | \  / | __ _  ___ _ __ ___
+ \___ \| | '_ ` _ \| '_ \| |/ _ \ | |\/| |/ _` |/ __| '__/ _ \
+ ____) | | | | | | | |_) | |  __/ | |  | | (_| | (__| | | (_) |
+|_____/|_|_| |_| |_| .__/|_|\___| |_|  |_|\__,_|\___|_|  \___/
+  T r a c k i n g  | |
+                   |_|
+```
 **I hate MyFitnessPal, I hate ads, I hate pay-walling brain dead features (barcode scanner)**
 
 **Open source. No account. No ads. Your data never leaves your phone.**
@@ -6,6 +15,7 @@
 A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.  Plus AI to fill in food diary gaps
 
 ---
+
 
 ## Features
 
@@ -27,16 +37,6 @@ Head to the [Releases](../../releases) page, download the latest `.apk` file, an
 > You may need to allow installs from unknown sources under **Settings -> Install Unknown Apps**.
 > Requires Android 8.0 or newer.
 
-```
-  _____ _                 _        __  __
- / ____(_)               | |      |  \/  |
-| (___  _ _ __ ___  _ __ | | ___  | \  / | __ _  ___ _ __ ___
- \___ \| | '_ ` _ \| '_ \| |/ _ \ | |\/| |/ _` |/ __| '__/ _ \
- ____) | | | | | | | |_) | |  __/ | |  | | (_| | (__| | | (_) |
-|_____/|_|_| |_| |_| .__/|_|\___| |_|  |_|\__,_|\___|_|  \___/
-  T r a c k i n g  | |
-                   |_|
-```
 
 ## Screenshots
 
