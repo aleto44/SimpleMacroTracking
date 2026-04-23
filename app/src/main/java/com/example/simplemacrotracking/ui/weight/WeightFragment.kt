@@ -167,22 +167,51 @@ class WeightFragment : Fragment() {
 
             // Capture drag start position in data-space for drag-to-zoom
             // and pixel position for the selection overlay
-            setOnTouchListener { _, event ->
+            var touchDownX = 0f
+            var touchDownY = 0f
+            var verticalScrollLocked = false
+            setOnTouchListener { v, event ->
                 if (!isUpdatingChart) {
                     when (event.action) {
                         MotionEvent.ACTION_DOWN -> {
+                            touchDownX = event.x
+                            touchDownY = event.y
+                            verticalScrollLocked = false
                             val pt = getTransformer(YAxis.AxisDependency.LEFT)
                                 .getValuesByTouchPoint(event.x, event.y)
                             dragStartDataX = pt.x.toFloat()
                             dragStartPixelX = event.x
                             binding.chartSelectionOverlay.clearSelection()
+                            // Allow parent to decide until we know the direction
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
                         }
                         MotionEvent.ACTION_MOVE -> {
-                            if (!dragStartPixelX.isNaN()) {
+                            val dx = Math.abs(event.x - touchDownX)
+                            val dy = Math.abs(event.y - touchDownY)
+                            if (!verticalScrollLocked) {
+                                val minSlop = 12f  // px before we commit to a direction
+                                if (dx > minSlop || dy > minSlop) {
+                                    if (dy > dx * 2f) {
+                                        // Clearly vertical — let the parent ScrollView scroll
+                                        dragStartDataX = Float.NaN
+                                        dragStartPixelX = Float.NaN
+                                        binding.chartSelectionOverlay.clearSelection()
+                                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                                        return@setOnTouchListener false
+                                    } else {
+                                        // Horizontal or ambiguous — lock scroll and handle as chart drag
+                                        verticalScrollLocked = true
+                                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                                    }
+                                }
+                            }
+                            if (verticalScrollLocked && !dragStartPixelX.isNaN()) {
                                 binding.chartSelectionOverlay.updateSelection(dragStartPixelX, event.x)
                             }
                         }
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            verticalScrollLocked = false
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
                             binding.chartSelectionOverlay.clearSelection()
                         }
                     }
