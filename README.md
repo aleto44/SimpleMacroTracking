@@ -1,3 +1,12 @@
+
+**I hate MyFitnessPal, I hate ads, I hate pay walling brain dead features (barcode scanner)**
+
+**Open source. No account. No ads. Your data never leaves your phone.**
+
+A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.  Plus AI to fill in food diary gaps
+
+---
+
 ```
   _____ _                 _        __  __
  / ____(_)               | |      |  \/  |
@@ -9,11 +18,6 @@
                    |_|
 ```
 
-**Open source. No account. No ads. Your data never leaves your phone.**
-
-A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.
-
----
 
 ## Features
 
@@ -75,19 +79,20 @@ Open source -- do whatever you want with it.
     <td align="center"><b>Weight Logging</b></td>
   </tr>
   <tr>
-    <td><img width="220" src="https://github.com/user-attachments/assets/e1628085-1304-4bef-8189-fbae3ac2c36b" /></td>
-    <td><img width="220" src="https://github.com/user-attachments/assets/9fdb264c-e3c8-4cd8-a2e9-5b3dc8eda213" /></td>
-    <td><img width="220" src="https://github.com/user-attachments/assets/688baa85-767b-405e-83c0-e0876f9e4f4c" /></td>
+    <td><img width="420"  alt="Screenshot 2026-04-22 204617" src="https://github.com/user-attachments/assets/6b956bd1-f526-447d-aa84-2d3a4a7bd8eb" /></td>
+    <td><img width="420" src="https://github.com/user-attachments/assets/9fdb264c-e3c8-4cd8-a2e9-5b3dc8eda213" /></td>
+    <td><img width="420"  alt="weight" src="https://github.com/user-attachments/assets/afa5ac9b-4148-435c-bca7-548994b817b9" />
+</td>
   </tr>
   <tr>
-    <td align="center"><b>Settings</b></td>
+    <td align="center"><b>Goals</b></td>
     <td align="center"><b>AI Entry</b></td>
-    <td></td>
+    <td align="center"><b>Github Models and Gemeni Support</b></td>
   </tr>
   <tr>
-    <td><img width="220" src="https://github.com/user-attachments/assets/a7966402-78a1-40d8-a5a1-a3205ac5dc51" /></td>
-    <td><img width="220" src="https://github.com/user-attachments/assets/89c370c8-5f95-4694-8ed1-72932a9da706" /></td>
-    <td></td>
+    <td><img width="420" alt="goals" src="https://github.com/user-attachments/assets/487adda5-6c1c-4a2d-8fd9-7068e76d4e84"/></td>
+    <td><img width="420" src="https://github.com/user-attachments/assets/89c370c8-5f95-4694-8ed1-72932a9da706" /></td>
+    <td><img width="420"  alt="waterfalled ai support" src="https://github.com/user-attachments/assets/d25928ad-401f-43c7-ab81-698048e4e9de" /></td>
   </tr>
 </table>
 
