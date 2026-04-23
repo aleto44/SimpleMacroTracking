@@ -1,12 +1,3 @@
-
-**I hate MyFitnessPal, I hate ads, I hate pay walling brain dead features (barcode scanner)**
-
-**Open source. No account. No ads. Your data never leaves your phone.**
-
-A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.  Plus AI to fill in food diary gaps
-
----
-
 ```
   _____ _                 _        __  __
  / ____(_)               | |      |  \/  |
@@ -17,13 +8,20 @@ A lightweight Android app for tracking daily nutrition and weight — built for 
   T r a c k i n g  | |
                    |_|
 ```
+**I hate MyFitnessPal, I hate ads, I hate pay-walling brain dead features (barcode scanner)**
+
+**Open source. No account. No ads. Your data never leaves your phone.**
+
+A lightweight Android app for tracking daily nutrition and weight — built for people who just want the basics.  Plus AI to fill in food diary gaps
+
+---
 
 
 ## Features
 
 - [+] **Daily Diary** — log meals, track calories & macros, navigate by date
 - [+] **Barcode Scanner** — scan packaged food to pull nutrition data automatically
-- [+] **AI Entry** — describe any food in plain English and let Gemini fill in the macros [you supply your own api key (you can generate one for free at https://developers.generativeai.google.dev/)]
+- [+] **AI Entry** — describe any food in plain English [BYOK, gemeni and Github Models supported]
 - [+] **Voice Logging** — say "add chicken breast 150 grams" and it's logged
 - [+] **Weight Tracker** — log weight, view a line chart, filter by time range
 - [+] **Macro Progress Bars** — visual progress toward your daily goals
@@ -39,36 +37,6 @@ Head to the [Releases](../../releases) page, download the latest `.apk` file, an
 > You may need to allow installs from unknown sources under **Settings -> Install Unknown Apps**.
 > Requires Android 8.0 or newer.
 
----
-
-## Contributing / Adding Features
-
-Feel free to fork this repo and do whatever you want. Pull requests are also welcome.
-
----
-
-## Tech Stack
-
-```
-Language      Kotlin
-Architecture  MVVM + StateFlow
-DI            Hilt
-Database      Room
-Networking    Retrofit
-Barcode       ZXing
-Charts        MPAndroidChart
-AI            Google Gemini API
-Food Data     OpenFoodFacts
-Security      EncryptedSharedPreferences (AES-256)
-```
-
----
-
-## License
-
-Open source -- do whatever you want with it.
-
----
 
 ## Screenshots
 
@@ -96,7 +64,34 @@ Open source -- do whatever you want with it.
   </tr>
 </table>
 
+---
 
+## Contributing / Adding Features
+
+Feel free to fork this repo and do whatever you want. Pull requests are also welcome.
+
+---
+
+## License
+
+Open source -- do whatever you want with it.
+
+---
+
+## Tech Stack
+
+```
+Language      Kotlin
+Architecture  MVVM + StateFlow
+DI            Hilt
+Database      Room
+Networking    Retrofit
+Barcode       ZXing
+Charts        MPAndroidChart
+AI            Google Gemini API
+Food Data     OpenFoodFacts
+Security      EncryptedSharedPreferences (AES-256)
+```
 
 
 
