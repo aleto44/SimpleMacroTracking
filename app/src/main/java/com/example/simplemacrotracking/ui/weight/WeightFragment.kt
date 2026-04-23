@@ -327,7 +327,9 @@ class WeightFragment : Fragment() {
                     color = weightMaColor
                     setCircleColor(weightMaColor)
                     lineWidth = 2f
-                    circleRadius = 2f
+                    circleRadius = 1f
+                    circleHoleRadius = 0f
+                    setDrawCircleHole(false)
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     axisDependency = YAxis.AxisDependency.LEFT
@@ -339,7 +341,9 @@ class WeightFragment : Fragment() {
                     color = weightGreen
                     setCircleColor(weightGreen)
                     lineWidth = 2f
-                    circleRadius = 3f
+                    circleRadius = 1f
+                    circleHoleRadius = 0f
+                    setDrawCircleHole(false)
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     setDrawFilled(true)
@@ -358,7 +362,9 @@ class WeightFragment : Fragment() {
                     color = calMaColor
                     setCircleColor(calMaColor)
                     lineWidth = 2f
-                    circleRadius = 2f
+                    circleRadius = 1f
+                    circleHoleRadius = 0f
+                    setDrawCircleHole(false)
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     axisDependency = axisDep
@@ -370,7 +376,9 @@ class WeightFragment : Fragment() {
                     color = calOrange
                     setCircleColor(calOrange)
                     lineWidth = 2f
-                    circleRadius = 3f
+                    circleRadius = 1f
+                    circleHoleRadius = 0f
+                    setDrawCircleHole(false)
                     setDrawValues(false)
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     setDrawFilled(true)
