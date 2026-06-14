@@ -26,6 +26,8 @@ class FoodRepository @Inject constructor(
 
     fun searchFoodItemsSortedByLastDiary(query: String): Flow<List<FoodItem>> = dao.searchFoodItemsSortedByLastDiary(query)
 
+    suspend fun searchBaseFoods(query: String): List<FoodItem> = dao.searchBaseFoods(query)
+
     suspend fun getFoodItemById(id: Long): FoodItem? = dao.getFoodItemById(id)
 
     suspend fun getFoodItemByBarcode(barcode: String): FoodItem? = dao.getFoodItemByBarcode(barcode)

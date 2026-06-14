@@ -56,6 +56,25 @@
         app:tint="@color/color_bg_primary"
         app:srcCompat="@drawable/ic_add" />
 
+    <!-- Recipe FAB: shown only on Foods tab, to the left of the main FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_recipe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="88dp"
+        android:layout_marginBottom="32dp"
+        android:contentDescription="Add recipe"
+        android:visibility="gone"
+        app:backgroundTint="@color/color_accent_green"
+        app:elevation="4dp"
+        app:fabCustomSize="40dp"
+        app:fabSize="mini"
+        app:iconSize="16dp"
+        app:layout_dodgeInsetEdges="bottom"
+        app:tint="@color/color_bg_primary"
+        app:srcCompat="@drawable/ic_recipe" />
+
     <!-- Mic FAB: 32dp custom size, vertically centred with the 56dp plus FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_mic"

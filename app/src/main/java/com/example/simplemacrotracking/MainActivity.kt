@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
 
-        // Show FAB only on Diary and Foods tabs; show mic FAB only on Diary
+        // Show FAB only on Diary and Foods tabs; show mic FAB only on Diary; recipe FAB only on Foods
         val fabDestinations = setOf(R.id.diaryFragment, R.id.foodDatabaseFragment)
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id in fabDestinations) {
@@ -42,11 +42,17 @@ class MainActivity : AppCompatActivity() {
             } else {
                 binding.fabMic.hide()
             }
+            if (destination.id == R.id.foodDatabaseFragment) {
+                binding.fabRecipe.show()
+            } else {
+                binding.fabRecipe.hide()
+            }
         }
     }
 
     fun getFab(): FloatingActionButton = binding.fab
     fun getMicFab(): FloatingActionButton = binding.fabMic
+    fun getFabRecipe(): FloatingActionButton = binding.fabRecipe
 
     fun selectFoodsTab() {
         binding.bottomNav.selectedItemId = R.id.foodDatabaseFragment

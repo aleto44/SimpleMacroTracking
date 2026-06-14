@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.simplemacrotracking.MainActivity
+import com.example.simplemacrotracking.ui.recipe.AddRecipeFragment
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.databinding.FragmentFoodDatabaseBinding
@@ -105,6 +106,10 @@ class FoodDatabaseFragment : Fragment() {
                 R.id.action_foodDatabase_to_addEntryBottomSheet,
                 bundleOf("targetDate" to (targetDate ?: java.time.LocalDate.now().toString()))
             )
+        }
+
+        (activity as MainActivity).getFabRecipe().setOnClickListener {
+            AddRecipeFragment().show(parentFragmentManager, "add_recipe")
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

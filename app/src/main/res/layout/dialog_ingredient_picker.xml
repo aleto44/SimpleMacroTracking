@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search foods..."
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/color_text_secondary"
+        app:hintTextColor="@color/color_text_secondary"
+        app:boxStrokeColor="@color/color_border"
+        app:boxBackgroundColor="@color/color_bg_elevated"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_ingredient_search"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:textColor="@color/color_text_primary"
+            android:textColorHint="@color/color_text_secondary" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_ingredient_results"
+        android:layout_width="match_parent"
+        android:layout_height="240dp"
+        android:nestedScrollingEnabled="true"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_border"
+        android:layout_marginVertical="4dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_create_new_ingredient"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="+ Create new food"
+        android:textColor="@color/color_accent_green" />
+
+</LinearLayout>

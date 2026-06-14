@@ -16,6 +16,8 @@ import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.data.model.RecurringEntry
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.FoodRepository
+import com.example.simplemacrotracking.data.model.enums.FoodSource
+import com.example.simplemacrotracking.data.repository.RecipeRepository
 import com.example.simplemacrotracking.data.repository.RecurringRepository
 import com.example.simplemacrotracking.databinding.FragmentItemActionSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -33,6 +35,7 @@ class ItemActionSheet : BottomSheetDialogFragment() {
     @Inject lateinit var foodRepository: FoodRepository
     @Inject lateinit var diaryRepository: DiaryRepository
     @Inject lateinit var recurringRepository: RecurringRepository
+    @Inject lateinit var recipeRepository: RecipeRepository
 
     private var foodItem: FoodItem? = null
     private var viewCreated = false
@@ -86,6 +89,22 @@ class ItemActionSheet : BottomSheetDialogFragment() {
                 if (isEditing) {
                     val existing = diaryRepository.getDiaryEntryById(diaryEntryId)
                     existing?.let { diaryRepository.updateDiaryEntry(it.copy(actualAmount = amount)) }
+                } else if (food.source == FoodSource.RECIPE) {
+                    // Expand recipe: insert one diary entry per ingredient, scaled to requested amount
+                    val scale = if (food.baseAmount > 0f) amount / food.baseAmount else 1f
+                    val ingredients = recipeRepository.getIngredientsForRecipe(food.id)
+                    for ((ingredient, ingredientFood) in ingredients) {
+                        if (ingredientFood != null) {
+                            diaryRepository.insertDiaryEntry(
+                                DiaryEntry(
+                                    date = LocalDate.parse(targetDate),
+                                    foodItemId = ingredient.ingredientFoodItemId,
+                                    actualAmount = ingredient.amount * scale,
+                                    measurementType = ingredient.measurementType
+                                )
+                            )
+                        }
+                    }
                 } else {
                     diaryRepository.insertDiaryEntry(
                         DiaryEntry(
@@ -143,6 +162,8 @@ class ItemActionSheet : BottomSheetDialogFragment() {
                     .replace(Regex("(\\d)0+ "), "$1 "))
             }
             binding.tvUnit.text = food.measurementType
+            // Recurring is not supported for recipes (they expand to multiple entries)
+            if (food.source == FoodSource.RECIPE) binding.btnAddRecurring.visibility = View.GONE
 
             if (populateAmountField) {
                 binding.btnAction.text = if (isEditing) "Save" else "Add"

@@ -29,7 +29,8 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
         Room.databaseBuilder(ctx, AppDatabase::class.java, "macro_db")
-            .fallbackToDestructiveMigration(dropAllTables = true)   // safe during pre-release; replace with proper migrations before v2
+            .addMigrations(AppDatabase.MIGRATION_3_4)
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides
@@ -43,6 +44,9 @@ object AppModule {
 
     @Provides
     fun provideRecurringEntryDao(db: AppDatabase) = db.recurringEntryDao()
+
+    @Provides
+    fun provideRecipeIngredientDao(db: AppDatabase) = db.recipeIngredientDao()
 
     // ── Moshi ─────────────────────────────────────────────────────
     @Provides

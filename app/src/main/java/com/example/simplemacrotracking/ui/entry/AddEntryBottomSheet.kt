@@ -31,6 +31,9 @@ class AddEntryBottomSheet : BottomSheetDialogFragment() {
     private val editFoodId: Long by lazy {
         arguments?.getLong("editFoodId", -1L) ?: -1L
     }
+    private val recipeMode: Boolean by lazy {
+        arguments?.getBoolean("recipeMode", false) ?: false
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -69,7 +72,11 @@ class AddEntryBottomSheet : BottomSheetDialogFragment() {
             val foodItemId = bundle.getLong("foodItemId", -1L)
             if (foodItemId < 0) return@setFragmentResultListener
 
-            if (editFoodId > 0) {
+            if (recipeMode) {
+                // Relay to parent (AddRecipeFragment's childFragmentManager) and close
+                parentFragmentManager.setFragmentResult("ingredient_food_saved", bundle)
+                dismiss()
+            } else if (editFoodId > 0) {
                 // Editing an existing food — pop back to ItemActionSheet
                 findNavController().popBackStack()
             } else {

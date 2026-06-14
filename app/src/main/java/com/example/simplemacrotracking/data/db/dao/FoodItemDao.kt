@@ -22,13 +22,13 @@ interface FoodItemDao {
     """)
     fun getAllFoodItemsSortedByLastDiary(): Flow<List<FoodItem>>
 
-    @Query("SELECT * FROM food_items WHERE source != 'IMPORT' AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query("SELECT * FROM food_items WHERE source != 'IMPORT' AND (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%') ORDER BY name ASC")
     fun searchFoodItems(query: String): Flow<List<FoodItem>>
 
     @Query("""
         SELECT food_items.* FROM food_items
         LEFT JOIN diary_entries ON food_items.id = diary_entries.foodItemId
-        WHERE food_items.source != 'IMPORT' AND food_items.name LIKE '%' || :query || '%'
+        WHERE food_items.source != 'IMPORT' AND (food_items.name LIKE '%' || :query || '%' OR food_items.brand LIKE '%' || :query || '%')
         GROUP BY food_items.id
         ORDER BY
             CASE WHEN MAX(diary_entries.date) IS NULL THEN 1 ELSE 0 END,
@@ -36,6 +36,9 @@ interface FoodItemDao {
             food_items.name ASC
     """)
     fun searchFoodItemsSortedByLastDiary(query: String): Flow<List<FoodItem>>
+
+    @Query("SELECT * FROM food_items WHERE source NOT IN ('IMPORT', 'RECIPE') AND (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%') ORDER BY name ASC")
+    suspend fun searchBaseFoods(query: String): List<FoodItem>
 
     @Query("SELECT * FROM food_items WHERE id = :id")
     suspend fun getFoodItemById(id: Long): FoodItem?
