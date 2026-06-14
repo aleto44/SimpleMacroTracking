@@ -121,7 +121,9 @@ class WeightFragment : Fragment() {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Delete Entry")
                     .setMessage("Delete the weight entry for ${entry.date}?")
-                    .setPositiveButton("Delete") { _, _ -> viewModel.deleteWeightEntry(entry) }
+                    .setPositiveButton("Delete") { _, _ ->
+                        viewModel.deleteWeightEntry(entry)
+                    }
                     .setNegativeButton("Cancel", null)
                     .show()
             }
