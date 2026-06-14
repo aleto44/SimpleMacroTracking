@@ -74,6 +74,7 @@ class ManualEntryFragment : Fragment() {
         binding.etProtein.setText("%.4g".format(food.proteinG).trimEnd('0').trimEnd('.'))
         binding.etCarbs.setText("%.4g".format(food.carbsG).trimEnd('0').trimEnd('.'))
         binding.etFat.setText("%.4g".format(food.fatG).trimEnd('0').trimEnd('.'))
+        if (food.fiberG > 0f) binding.etFiber.setText("%.4g".format(food.fiberG).trimEnd('0').trimEnd('.'))
     }
 
     private fun saveFood() {
@@ -97,6 +98,7 @@ class ManualEntryFragment : Fragment() {
         val protein = binding.etProtein.text.toString().toFloatOrNull() ?: 0f
         val carbs = binding.etCarbs.text.toString().toFloatOrNull() ?: 0f
         val fat = binding.etFat.text.toString().toFloatOrNull() ?: 0f
+        val fiber = binding.etFiber.text.toString().toFloatOrNull() ?: 0f
 
         viewLifecycleOwner.lifecycleScope.launch {
             val foodId: Long
@@ -104,7 +106,7 @@ class ManualEntryFragment : Fragment() {
                 val updated = existingFood!!.copy(
                     name = name, brand = brand, baseAmount = baseAmount,
                     measurementType = unit, calories = calories,
-                    proteinG = protein, carbsG = carbs, fatG = fat
+                    proteinG = protein, carbsG = carbs, fatG = fat, fiberG = fiber
                 )
                 foodRepository.updateFoodItem(updated)
                 foodId = editFoodId
@@ -112,7 +114,7 @@ class ManualEntryFragment : Fragment() {
                 val food = FoodItem(
                     name = name, brand = brand, baseAmount = baseAmount,
                     measurementType = unit, calories = calories,
-                    proteinG = protein, carbsG = carbs, fatG = fat,
+                    proteinG = protein, carbsG = carbs, fatG = fat, fiberG = fiber,
                     source = FoodSource.MANUAL
                 )
                 foodId = foodRepository.saveFoodItem(food)

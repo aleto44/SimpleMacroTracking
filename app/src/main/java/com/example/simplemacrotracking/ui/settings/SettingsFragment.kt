@@ -74,7 +74,8 @@ class SettingsFragment : Fragment() {
             val prot  = binding.etProtein.text.toString().toIntOrNull() ?: 0
             val carbs = binding.etCarbs.text.toString().toIntOrNull() ?: 0
             val fat   = binding.etFat.text.toString().toIntOrNull() ?: 0
-            viewModel.saveGoals(cal, prot, carbs, fat)
+            val fiber = binding.etFiber.text.toString().toIntOrNull() ?: 0
+            viewModel.saveGoals(cal, prot, carbs, fat, fiber)
             Snackbar.make(requireView(), "Goals saved ✓", Snackbar.LENGTH_SHORT).show()
         }
 
@@ -113,6 +114,7 @@ class SettingsFragment : Fragment() {
                     binding.etProtein.setText(if (state.proteinGoal > 0) state.proteinGoal.toString() else "")
                     binding.etCarbs.setText(if (state.carbsGoal > 0) state.carbsGoal.toString() else "")
                     binding.etFat.setText(if (state.fatGoal > 0) state.fatGoal.toString() else "")
+                    binding.etFiber.setText(if (state.fiberGoal > 0) state.fiberGoal.toString() else "")
                     binding.rgWeightUnit.check(
                         if (state.weightUnit == WeightUnit.LB) binding.rbLb.id else binding.rbKg.id
                     )

@@ -222,7 +222,7 @@
 
             </LinearLayout>
 
-            <!-- Macros row 2 -->
+            <!-- Macros row 2: Carbs + Fat + Fiber -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -250,9 +250,23 @@
                     android:layout_weight="1"
                     android:hint="Fat (g)"
                     style="@style/Style.Macro.InputField"
-                    android:layout_marginStart="4dp">
+                    android:layout_marginEnd="4dp">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_confirm_fat"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:textColor="@color/color_text_primary" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Fiber (g)"
+                    style="@style/Style.Macro.InputField">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_confirm_fiber"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"

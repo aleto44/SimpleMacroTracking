@@ -1,4 +1,4 @@
-﻿package com.example.simplemacrotracking.ui.shared
+package com.example.simplemacrotracking.ui.shared
 
 import android.os.Bundle
 import android.text.Editable
@@ -6,14 +6,17 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.DiaryEntry
 import com.example.simplemacrotracking.data.model.FoodItem
+import com.example.simplemacrotracking.data.model.RecurringEntry
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.FoodRepository
+import com.example.simplemacrotracking.data.repository.RecurringRepository
 import com.example.simplemacrotracking.databinding.FragmentItemActionSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,6 +32,7 @@ class ItemActionSheet : BottomSheetDialogFragment() {
 
     @Inject lateinit var foodRepository: FoodRepository
     @Inject lateinit var diaryRepository: DiaryRepository
+    @Inject lateinit var recurringRepository: RecurringRepository
 
     private var foodItem: FoodItem? = null
     private var viewCreated = false
@@ -55,6 +59,7 @@ class ItemActionSheet : BottomSheetDialogFragment() {
             override fun afterTextChanged(s: Editable?) {
                 val amount = s?.toString()?.toFloatOrNull()
                 binding.btnAction.isEnabled = amount != null && amount > 0f
+                binding.btnAddRecurring.isEnabled = amount != null && amount > 0f
                 updatePreview(amount ?: 0f)
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -62,6 +67,9 @@ class ItemActionSheet : BottomSheetDialogFragment() {
         })
 
         binding.btnCancel.setOnClickListener { dismiss() }
+
+        // Add Recurring is only available when adding a new entry (not editing)
+        binding.btnAddRecurring.visibility = if (isEditing) View.GONE else View.VISIBLE
 
         binding.btnEditFood.setOnClickListener {
             val food = foodItem ?: return@setOnClickListener
@@ -92,10 +100,26 @@ class ItemActionSheet : BottomSheetDialogFragment() {
                     "item_action_result",
                     Bundle().apply { putBoolean("saved", true) }
                 )
-                // Pop all the way back to the diary when adding a new entry
-                // (covers the path: Diary → FoodDatabase → ItemActionSheet)
                 val poppedToDiary = !isEditing &&
                     findNavController().popBackStack(R.id.diaryFragment, false)
+                if (!poppedToDiary) findNavController().popBackStack()
+            }
+        }
+
+        binding.btnAddRecurring.setOnClickListener {
+            val amount = binding.etAmount.text.toString().toFloatOrNull() ?: return@setOnClickListener
+            val food = foodItem ?: return@setOnClickListener
+            viewLifecycleOwner.lifecycleScope.launch {
+                recurringRepository.insert(
+                    RecurringEntry(
+                        foodItemId = food.id,
+                        actualAmount = amount,
+                        measurementType = food.measurementType,
+                        startDate = LocalDate.parse(targetDate)
+                    )
+                )
+                Toast.makeText(requireContext(), "${food.name} will be added every day going forward", Toast.LENGTH_SHORT).show()
+                val poppedToDiary = findNavController().popBackStack(R.id.diaryFragment, false)
                 if (!poppedToDiary) findNavController().popBackStack()
             }
         }
@@ -105,7 +129,6 @@ class ItemActionSheet : BottomSheetDialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        // Refresh food info when returning from edit (pencil navigation)
         if (viewCreated) loadFoodData(diaryEntryId > 0, populateAmountField = false)
     }
 
@@ -122,14 +145,13 @@ class ItemActionSheet : BottomSheetDialogFragment() {
             binding.tvUnit.text = food.measurementType
 
             if (populateAmountField) {
-                binding.btnAction.text = if (isEditing) "Save Changes" else "Add to Diary"
+                binding.btnAction.text = if (isEditing) "Save" else "Add"
                 val amount = if (isEditing) {
                     diaryRepository.getDiaryEntryById(diaryEntryId)?.actualAmount ?: food.baseAmount
                 } else food.baseAmount
                 binding.etAmount.setText(formatFloat(amount))
                 updatePreview(amount)
             } else {
-                // Just refresh the displayed macros with current amount
                 val current = binding.etAmount.text.toString().toFloatOrNull() ?: food.baseAmount
                 updatePreview(current)
             }
@@ -147,6 +169,7 @@ class ItemActionSheet : BottomSheetDialogFragment() {
         binding.tvPreviewProtein.text = "Protein: %.1f g".format(food.proteinG * scale)
         binding.tvPreviewCarbs.text = "Carbs: %.1f g".format(food.carbsG * scale)
         binding.tvPreviewFat.text = "Fat: %.1f g".format(food.fatG * scale)
+        binding.tvPreviewFiber.text = "Fiber: %.1f g".format(food.fiberG * scale)
     }
 
     override fun onDestroyView() {

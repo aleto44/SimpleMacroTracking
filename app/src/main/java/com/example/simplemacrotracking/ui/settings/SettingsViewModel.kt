@@ -31,6 +31,7 @@ data class SettingsUiState(
     val proteinGoal: Int = 0,
     val carbsGoal: Int = 0,
     val fatGoal: Int = 0,
+    val fiberGoal: Int = 0,
     val weightUnit: WeightUnit = WeightUnit.LB,
     val aiApiKey: String = "",
     val aiProviders: List<AiProviderConfig> = emptyList(),
@@ -61,17 +62,19 @@ class SettingsViewModel @Inject constructor(
         proteinGoal = settingsPrefs.proteinGoal,
         carbsGoal   = settingsPrefs.carbsGoal,
         fatGoal     = settingsPrefs.fatGoal,
+        fiberGoal   = settingsPrefs.fiberGoal,
         weightUnit  = settingsPrefs.preferredWeightUnit,
         aiApiKey    = settingsPrefs.aiApiKey,
         aiProviders = settingsPrefs.aiProviders
     )
 
-    fun saveGoals(calories: Int, protein: Int, carbs: Int, fat: Int) {
+    fun saveGoals(calories: Int, protein: Int, carbs: Int, fat: Int, fiber: Int) {
         settingsPrefs.calorieGoal = calories
         settingsPrefs.proteinGoal = protein
         settingsPrefs.carbsGoal   = carbs
         settingsPrefs.fatGoal     = fat
-        _uiState.update { it.copy(calorieGoal = calories, proteinGoal = protein, carbsGoal = carbs, fatGoal = fat) }
+        settingsPrefs.fiberGoal   = fiber
+        _uiState.update { it.copy(calorieGoal = calories, proteinGoal = protein, carbsGoal = carbs, fatGoal = fat, fiberGoal = fiber) }
     }
 
     fun setWeightUnit(newUnit: WeightUnit) {

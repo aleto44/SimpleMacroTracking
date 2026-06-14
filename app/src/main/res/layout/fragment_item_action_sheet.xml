@@ -85,6 +85,11 @@
             <TextView android:id="@+id/tv_preview_fat" android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Fat: 0 g"
+                android:textColor="@color/color_text_secondary"
+                android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/tv_preview_fiber" android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fiber: 0 g"
                 android:textColor="@color/color_text_secondary" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -94,9 +99,14 @@
         <Button android:id="@+id/btn_cancel" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="Cancel"
             style="@style/Style.Macro.Button.Ghost"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="4dp" />
+        <Button android:id="@+id/btn_add_recurring" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Add Recurring"
+            style="@style/Style.Macro.Button.Ghost"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone" />
         <Button android:id="@+id/btn_action" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:text="Add to Diary"
+            android:layout_height="wrap_content" android:text="Add"
             style="@style/Style.Macro.Button.Primary"
             android:enabled="false" />
     </LinearLayout>

@@ -1,6 +1,7 @@
 package com.example.simplemacrotracking.ui.entry
 
 import android.Manifest
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -68,6 +69,7 @@ class BarcodeEntryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         if (hasCameraPermission() && binding.layoutScanning.visibility == View.VISIBLE) {
             isProcessing = false
             binding.barcodeView.resume()
@@ -76,6 +78,7 @@ class BarcodeEntryFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         binding.barcodeView.pause()
     }
 

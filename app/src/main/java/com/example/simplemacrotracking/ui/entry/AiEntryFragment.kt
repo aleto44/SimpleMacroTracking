@@ -83,7 +83,7 @@ class AiEntryFragment : Fragment() {
                 Estimate nutrition for: "$description"
                 unit/amount rules: use exact unit+amount if specified (e.g. "200g" → unit="g", amount=200); simple ingredients default to "g"; named dishes/restaurant items use a natural unit (e.g. "bowl","slice","6 piece"), amount=1; countable items use the item as unit (e.g. "egg"), amount=count.
                 name/brand rules: "name" = concise item only (e.g. "Chicken McNuggets"); "brand" = restaurant/brand or null.
-                Respond ONLY with JSON (no markdown): {"name":"...","brand":null,"calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"amount":0,"unit":"..."}
+                Respond ONLY with JSON (no markdown): {"name":"...","brand":null,"calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"fiber_g":0,"amount":0,"unit":"..."}
             """.trimIndent()
 
             try {
@@ -116,6 +116,7 @@ class AiEntryFragment : Fragment() {
             binding.etConfirmProtein.setText("%.1f".format(obj.optDouble("protein_g", 0.0)))
             binding.etConfirmCarbs.setText("%.1f".format(obj.optDouble("carbs_g", 0.0)))
             binding.etConfirmFat.setText("%.1f".format(obj.optDouble("fat_g", 0.0)))
+            binding.etConfirmFiber.setText("%.1f".format(obj.optDouble("fiber_g", 0.0)))
             binding.etConfirmAmount.setText("%.0f".format(obj.optDouble("amount", 1.0)))
             binding.etConfirmUnit.setText(obj.optString("unit", "serving"))
         } catch (e: Exception) {
@@ -174,6 +175,7 @@ class AiEntryFragment : Fragment() {
         val proteinG = binding.etConfirmProtein.text.toString().toFloatOrNull() ?: 0f
         val carbsG = binding.etConfirmCarbs.text.toString().toFloatOrNull() ?: 0f
         val fatG = binding.etConfirmFat.text.toString().toFloatOrNull() ?: 0f
+        val fiberG = binding.etConfirmFiber.text.toString().toFloatOrNull() ?: 0f
         val amount = binding.etConfirmAmount.text.toString().toFloatOrNull() ?: 1f
         val unit = binding.etConfirmUnit.text.toString().trim().ifBlank { "serving" }
 
@@ -181,7 +183,7 @@ class AiEntryFragment : Fragment() {
             val food = FoodItem(
                 name = name, brand = brand, baseAmount = amount, measurementType = unit,
                 calories = calories, proteinG = proteinG, carbsG = carbsG, fatG = fatG,
-                source = FoodSource.AI
+                fiberG = fiberG, source = FoodSource.AI
             )
             val foodId = foodRepository.saveFoodItem(food)
             parentFragmentManager.setFragmentResult(

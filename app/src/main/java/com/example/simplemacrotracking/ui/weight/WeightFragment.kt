@@ -39,6 +39,9 @@ class WeightFragment : Fragment() {
     private lateinit var entryAdapter: WeightEntryAdapter
     /** True while we are programmatically pushing data into the chart — suppresses gesture callbacks. */
     private var isUpdatingChart = false
+    /** True while we are restoring persisted UI state — suppresses listener feedback loops. */
+    private var isRestoringUi = false
+    private var uiRestored = false
     /** Data-space X value where the user's drag started. NaN when no drag is in progress. */
     private var dragStartDataX: Float = Float.NaN
     /** Pixel X where the drag started (for the selection overlay). NaN when idle. */
@@ -69,14 +72,15 @@ class WeightFragment : Fragment() {
 
         // MA days slider
         binding.sliderMaDays.addOnChangeListener(Slider.OnChangeListener { _, value, fromUser ->
-            if (fromUser) {
+            if (fromUser || isRestoringUi) {
                 val days = value.toInt()
                 binding.tvMaDaysLabel.text = "$days days"
-                viewModel.setMovingAverageDays(days)
+                if (!isRestoringUi) viewModel.setMovingAverageDays(days)
             }
         })
 
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (isRestoringUi) return@setOnCheckedStateChangeListener
             val range = when (checkedIds.firstOrNull()) {
                 R.id.chip_1w  -> TimeRange.W1
                 R.id.chip_1m  -> TimeRange.M1
@@ -91,13 +95,13 @@ class WeightFragment : Fragment() {
         }
 
         binding.chipShowWeight.setOnCheckedChangeListener { _, checked ->
-            viewModel.setShowWeight(checked)
+            if (!isRestoringUi) viewModel.setShowWeight(checked)
         }
         binding.chipShowCalories.setOnCheckedChangeListener { _, checked ->
-            viewModel.setShowCalories(checked)
+            if (!isRestoringUi) viewModel.setShowCalories(checked)
         }
         binding.chipShowMovingAvg.setOnCheckedChangeListener { _, checked ->
-            viewModel.setShowMovingAverage(checked)
+            if (!isRestoringUi) viewModel.setShowMovingAverage(checked)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -258,6 +262,26 @@ class WeightFragment : Fragment() {
     }
 
     private fun render(state: WeightUiState) {
+        if (!uiRestored) {
+            uiRestored = true
+            isRestoringUi = true
+            binding.chipShowWeight.isChecked = state.showWeight
+            binding.chipShowCalories.isChecked = state.showCalories
+            binding.chipShowMovingAvg.isChecked = state.showMovingAverage
+            binding.sliderMaDays.value = state.movingAverageDays.toFloat()
+            binding.tvMaDaysLabel.text = "${state.movingAverageDays} days"
+            val chipId = when (state.timeRange) {
+                TimeRange.W1  -> R.id.chip_1w
+                TimeRange.M1  -> R.id.chip_1m
+                TimeRange.M3  -> R.id.chip_3m
+                TimeRange.Y1  -> R.id.chip_1y
+                TimeRange.Y3  -> R.id.chip_3y
+                TimeRange.Y5  -> R.id.chip_5y
+                TimeRange.ALL -> R.id.chip_all
+            }
+            binding.chipGroup.check(chipId)
+            isRestoringUi = false
+        }
         updateChart(state)
         updateStats(state.filteredEntries, state.allEntries)
         entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })

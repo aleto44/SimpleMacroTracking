@@ -3,6 +3,7 @@ package com.example.simplemacrotracking.ui.weight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.simplemacrotracking.data.model.WeightEntry
+import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.WeightRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,10 +30,19 @@ data class WeightUiState(
 @HiltViewModel
 class WeightViewModel @Inject constructor(
     private val weightRepository: WeightRepository,
-    private val diaryRepository: DiaryRepository
+    private val diaryRepository: DiaryRepository,
+    private val settingsPrefs: SettingsPrefs
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(WeightUiState())
+    private val _uiState = MutableStateFlow(
+        WeightUiState(
+            timeRange = try { TimeRange.valueOf(settingsPrefs.graphTimeRange) } catch (_: Exception) { TimeRange.M3 },
+            showWeight = settingsPrefs.graphShowWeight,
+            showCalories = settingsPrefs.graphShowCalories,
+            showMovingAverage = settingsPrefs.graphShowMovingAverage,
+            movingAverageDays = settingsPrefs.graphMovingAverageDays
+        )
+    )
     val uiState: StateFlow<WeightUiState> = _uiState.asStateFlow()
 
     init {
@@ -56,14 +66,27 @@ class WeightViewModel @Inject constructor(
     }
 
     fun setTimeRange(range: TimeRange) {
+        settingsPrefs.graphTimeRange = range.name
         val filtered = filterEntries(_uiState.value.allEntries, range, null)
         _uiState.update { it.copy(timeRange = range, filteredEntries = filtered, customRange = null) }
     }
 
-    fun setShowWeight(show: Boolean) { _uiState.update { it.copy(showWeight = show) } }
-    fun setShowCalories(show: Boolean) { _uiState.update { it.copy(showCalories = show) } }
-    fun setShowMovingAverage(show: Boolean) { _uiState.update { it.copy(showMovingAverage = show) } }
-    fun setMovingAverageDays(days: Int) { _uiState.update { it.copy(movingAverageDays = days) } }
+    fun setShowWeight(show: Boolean) {
+        settingsPrefs.graphShowWeight = show
+        _uiState.update { it.copy(showWeight = show) }
+    }
+    fun setShowCalories(show: Boolean) {
+        settingsPrefs.graphShowCalories = show
+        _uiState.update { it.copy(showCalories = show) }
+    }
+    fun setShowMovingAverage(show: Boolean) {
+        settingsPrefs.graphShowMovingAverage = show
+        _uiState.update { it.copy(showMovingAverage = show) }
+    }
+    fun setMovingAverageDays(days: Int) {
+        settingsPrefs.graphMovingAverageDays = days
+        _uiState.update { it.copy(movingAverageDays = days) }
+    }
 
     fun setCustomDateRange(start: LocalDate, end: LocalDate) {
         val filtered = filterEntries(_uiState.value.allEntries, _uiState.value.timeRange, start to end)

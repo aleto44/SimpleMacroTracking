@@ -70,13 +70,16 @@ class FoodDatabaseFragment : Fragment() {
 
         adapter = FoodAdapter(
             onItemClick = { food ->
-                findNavController().navigate(
-                    R.id.action_foodDatabase_to_itemActionSheet,
-                    bundleOf(
-                        "foodItemId" to food.id,
-                        "targetDate" to (targetDate ?: java.time.LocalDate.now().toString())
+                val navController = findNavController()
+                if (navController.currentDestination?.id == R.id.foodDatabaseFragment) {
+                    navController.navigate(
+                        R.id.action_foodDatabase_to_itemActionSheet,
+                        bundleOf(
+                            "foodItemId" to food.id,
+                            "targetDate" to (targetDate ?: java.time.LocalDate.now().toString())
+                        )
                     )
-                )
+                }
             },
             onItemLongClick = { food ->
                 AlertDialog.Builder(requireContext())

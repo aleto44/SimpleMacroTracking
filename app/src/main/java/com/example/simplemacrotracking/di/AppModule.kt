@@ -41,6 +41,9 @@ object AppModule {
     @Provides
     fun provideWeightEntryDao(db: AppDatabase) = db.weightEntryDao()
 
+    @Provides
+    fun provideRecurringEntryDao(db: AppDatabase) = db.recurringEntryDao()
+
     // ── Moshi ─────────────────────────────────────────────────────
     @Provides
     @Singleton

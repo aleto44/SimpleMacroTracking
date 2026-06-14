@@ -8,9 +8,9 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.simplemacrotracking.util.ColorUtil
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
@@ -23,8 +23,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.simplemacrotracking.MainActivity
 import com.example.simplemacrotracking.R
+import com.example.simplemacrotracking.data.model.RecurringEntryDisplay
 import com.example.simplemacrotracking.databinding.FragmentDiaryBinding
 import com.example.simplemacrotracking.ui.shared.SharedPickerViewModel
+import com.example.simplemacrotracking.util.ColorUtil
 import com.example.simplemacrotracking.util.SpeechRecognitionManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -45,13 +47,13 @@ class DiaryFragment : Fragment() {
     private val viewModel: DiaryViewModel by viewModels()
     private val sharedPickerViewModel: SharedPickerViewModel by activityViewModels()
     private lateinit var adapter: DiaryAdapter
+    private lateinit var recurringAdapter: RecurringDiaryAdapter
 
     @Inject lateinit var speechManager: SpeechRecognitionManager
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var listeningDialog: AlertDialog? = null
 
-    // Mic permission launcher
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -71,7 +73,6 @@ class DiaryFragment : Fragment() {
 
         adapter = DiaryAdapter(
             onItemClick = { ewf ->
-                // Navigate to ItemActionSheet for editing
                 findNavController().navigate(
                     R.id.action_diary_to_itemActionSheet,
                     bundleOf(
@@ -93,6 +94,11 @@ class DiaryFragment : Fragment() {
             }
         )
         binding.recyclerView.adapter = adapter
+
+        recurringAdapter = RecurringDiaryAdapter(
+            onItemLongClick = { display -> showRecurringOptions(display) }
+        )
+        binding.recyclerRecurring.adapter = recurringAdapter
 
         binding.btnPrevDay.setOnClickListener { viewModel.previousDay() }
         binding.btnNextDay.setOnClickListener { viewModel.nextDay() }
@@ -117,7 +123,6 @@ class DiaryFragment : Fragment() {
             (activity as MainActivity).selectFoodsTab()
         }
 
-        // Mic FAB — Vosk is always available (no Google required)
         val micFab = (activity as MainActivity).getMicFab()
         micFab.setOnClickListener { onMicClicked() }
 
@@ -129,6 +134,61 @@ class DiaryFragment : Fragment() {
                 }
             }
         }
+    }
+
+    // ── Recurring long-press options ──────────────────────────────────────────
+
+    private fun showRecurringOptions(display: RecurringEntryDisplay) {
+        val options = arrayOf(
+            "Remove for today only",
+            "Remove all future",
+            "Edit for today only",
+            "Edit all future"
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(display.food.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> viewModel.skipRecurringForToday(display)
+                    1 -> confirmRemoveAllFuture(display)
+                    2 -> showEditAmountDialog(display, allFuture = false)
+                    3 -> showEditAmountDialog(display, allFuture = true)
+                }
+            }
+            .show()
+    }
+
+    private fun confirmRemoveAllFuture(display: RecurringEntryDisplay) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Remove recurring entry?")
+            .setMessage("\"${display.food.name}\" will no longer be added automatically from today onward.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Remove") { _, _ ->
+                viewModel.removeAllFutureRecurring(display)
+            }
+            .show()
+    }
+
+    private fun showEditAmountDialog(display: RecurringEntryDisplay, allFuture: Boolean) {
+        val input = EditText(requireContext()).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText("%.4g".format(display.displayAmount).trimEnd('0').trimEnd('.'))
+            hint = display.food.measurementType
+        }
+        val title = if (allFuture) "Edit all future entries" else "Edit for today only"
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage("New amount (${display.food.measurementType}):")
+            .setView(input)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Save") { _, _ ->
+                val newAmount = input.text.toString().toFloatOrNull()
+                if (newAmount != null && newAmount > 0f) {
+                    if (allFuture) viewModel.editAllFutureRecurring(display, newAmount)
+                    else viewModel.editRecurringForToday(display, newAmount)
+                }
+            }
+            .show()
     }
 
     // ── Voice entry ───────────────────────────────────────────────────────────
@@ -148,7 +208,7 @@ class DiaryFragment : Fragment() {
         }
 
         listeningDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle("🎤 Listening…")
+            .setTitle("Listening…")
             .setMessage("Say something like:\n\"add milk 100 grams\"")
             .setNegativeButton("Cancel") { _, _ -> speechManager.cancel() }
             .setCancelable(false)
@@ -214,6 +274,12 @@ class DiaryFragment : Fragment() {
         binding.tvDate.text = state.date.format(dateFormatter)
         adapter.submitList(state.entries)
 
+        // Recurring section
+        recurringAdapter.submitList(state.recurringEntries)
+        val hasRecurring = state.recurringEntries.isNotEmpty()
+        binding.tvRecurringHeader.visibility = if (hasRecurring) View.VISIBLE else View.GONE
+        binding.recyclerRecurring.visibility = if (hasRecurring) View.VISIBLE else View.GONE
+
         // Hero calories
         val calConsumed = state.consumed.calories.toInt()
         val calGoal = state.goals.calories.toInt()
@@ -224,7 +290,6 @@ class DiaryFragment : Fragment() {
         binding.tvCaloriesRemaining.text = if (calRemaining >= 0) "$calRemaining remaining" else "${-calRemaining} over"
         binding.tvCaloriesRemaining.setTextColor(ColorUtil.getRatioColor(calRatio))
         binding.tvCaloriesGoalLabel.text = "/ ${calGoal} kcal goal"
-        // Keep hidden tv_calories in sync for any code that reads it
         binding.tvCalories.text = "$calConsumed / $calGoal kcal"
 
         // Protein
@@ -255,9 +320,18 @@ class DiaryFragment : Fragment() {
             binding.tvFat.text = "%.0fg / %.0fg".format(state.consumed.fatG, state.goals.fatG)
         }
 
-        // Hide the entire macros card if no macro goals are set
+        // Fiber
+        val hasFiberGoal = state.goals.fiberG > 0
+        binding.rowFiber.visibility = if (hasFiberGoal) View.VISIBLE else View.GONE
+        binding.progressFiber.visibility = if (hasFiberGoal) View.VISIBLE else View.GONE
+        if (hasFiberGoal) {
+            binding.progressFiber.ratio = state.consumed.fiberG / state.goals.fiberG
+            binding.tvFiber.text = "%.0fg / %.0fg".format(state.consumed.fiberG, state.goals.fiberG)
+        }
+
+        // Hide macros card if no macro goals set
         binding.cardMacros.visibility =
-            if (hasProteinGoal || hasCarbsGoal || hasFatGoal) View.VISIBLE else View.GONE
+            if (hasProteinGoal || hasCarbsGoal || hasFatGoal || hasFiberGoal) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {

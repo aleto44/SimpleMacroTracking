@@ -16,6 +16,7 @@ data class FoodItem(
     val proteinG: Float,
     val carbsG: Float,
     val fatG: Float,
+    val fiberG: Float = 0f,
     val source: FoodSource = FoodSource.MANUAL
 )
 

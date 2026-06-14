@@ -39,11 +39,14 @@ class FoodRepository @Inject constructor(
     suspend fun deleteFoodItem(item: FoodItem) = dao.deleteFoodItem(item)
 
     suspend fun fetchByBarcode(barcode: String): NetworkResult<FoodItem> {
-        // Check local cache first
-        val cached = dao.getFoodItemByBarcode(barcode)
-        if (cached != null) return NetworkResult.Success(cached)
-
-        if (!networkUtils.isOnline()) return NetworkResult.Error("No internet connection")
+        if (!networkUtils.isOnline()) {
+            val cached = dao.getFoodItemByBarcode(barcode)
+            return if (cached != null) {
+                NetworkResult.Success(cached)
+            } else {
+                NetworkResult.Error("No internet connection")
+            }
+        }
 
         return try {
             val response = api.getProduct(barcode)
@@ -60,20 +63,26 @@ class FoodRepository @Inject constructor(
                     val protein: Float
                     val carbs: Float
                     val fat: Float
+                    val fiber: Float
                     if (useServing) {
                         baseAmount = servingQty!!
                         calories = n?.caloriesPerServing ?: 0f
                         protein  = n?.proteinPerServing  ?: 0f
                         carbs    = n?.carbsPerServing    ?: 0f
                         fat      = n?.fatPerServing      ?: 0f
+                        fiber    = n?.fiberPerServing    ?: 0f
                     } else {
                         baseAmount = 100f
                         calories = n?.caloriesPer100g ?: 0f
                         protein  = n?.proteinPer100g  ?: 0f
                         carbs    = n?.carbsPer100g    ?: 0f
                         fat      = n?.fatPer100g      ?: 0f
+                        fiber    = n?.fiberPer100g    ?: 0f
                     }
+
+                    val cached = dao.getFoodItemByBarcode(barcode)
                     val item = FoodItem(
+                        id = cached?.id ?: 0,
                         name = product.productName?.ifBlank { "Unknown Product" } ?: "Unknown Product",
                         brand = product.brands?.ifBlank { null },
                         barcode = barcode,
@@ -83,9 +92,17 @@ class FoodRepository @Inject constructor(
                         proteinG = protein,
                         carbsG = carbs,
                         fatG = fat,
+                        fiberG = fiber,
                         source = FoodSource.BARCODE
                     )
-                    val id = dao.insertFoodItem(item)
+
+                    val id = if (cached != null) {
+                        dao.updateFoodItem(item)
+                        cached.id
+                    } else {
+                        dao.insertFoodItem(item)
+                    }
+
                     NetworkResult.Success(item.copy(id = id))
                 } else {
                     NetworkResult.Error("Product not found in Open Food Facts")
@@ -94,7 +111,12 @@ class FoodRepository @Inject constructor(
                 NetworkResult.Error("Not found (HTTP ${response.code()})")
             }
         } catch (e: IOException) {
-            NetworkResult.Error("No internet connection")
+            val cached = dao.getFoodItemByBarcode(barcode)
+            return if (cached != null) {
+                NetworkResult.Success(cached)
+            } else {
+                NetworkResult.Error("No internet connection")
+            }
         } catch (e: Exception) {
             NetworkResult.Error(e.message ?: "Unknown error")
         }

@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.simplemacrotracking.data.model.DiaryEntry
 import com.example.simplemacrotracking.data.model.DiaryEntryWithFood
 import com.example.simplemacrotracking.data.model.FoodItem
+import com.example.simplemacrotracking.data.model.RecurringEntryDisplay
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
 import com.example.simplemacrotracking.data.repository.FoodRepository
+import com.example.simplemacrotracking.data.repository.RecurringRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -19,7 +21,8 @@ data class Macros(
     val calories: Float = 0f,
     val proteinG: Float = 0f,
     val carbsG: Float = 0f,
-    val fatG: Float = 0f
+    val fatG: Float = 0f,
+    val fiberG: Float = 0f
 )
 
 sealed class VoiceResult {
@@ -31,6 +34,7 @@ sealed class VoiceResult {
 data class DiaryUiState(
     val date: LocalDate = LocalDate.now(),
     val entries: List<DiaryEntryWithFood> = emptyList(),
+    val recurringEntries: List<RecurringEntryDisplay> = emptyList(),
     val consumed: Macros = Macros(),
     val goals: Macros = Macros(),
     val isLoading: Boolean = false,
@@ -41,6 +45,7 @@ data class DiaryUiState(
 class DiaryViewModel @Inject constructor(
     private val diaryRepository: DiaryRepository,
     private val foodRepository: FoodRepository,
+    private val recurringRepository: RecurringRepository,
     private val settingsPrefs: SettingsPrefs
 ) : ViewModel() {
 
@@ -61,7 +66,8 @@ class DiaryViewModel @Inject constructor(
                     calories = settingsPrefs.calorieGoal.toFloat(),
                     proteinG = settingsPrefs.proteinGoal.toFloat(),
                     carbsG = settingsPrefs.carbsGoal.toFloat(),
-                    fatG = settingsPrefs.fatGoal.toFloat()
+                    fatG = settingsPrefs.fatGoal.toFloat(),
+                    fiberG = settingsPrefs.fiberGoal.toFloat()
                 )
             )
         }
@@ -71,22 +77,37 @@ class DiaryViewModel @Inject constructor(
     private fun observeEntries() {
         viewModelScope.launch {
             _selectedDate.flatMapLatest { date ->
-                diaryRepository.getEntriesWithFoodForDate(date)
-            }.collect { entries ->
+                combine(
+                    diaryRepository.getEntriesWithFoodForDate(date),
+                    recurringRepository.observeResolvedForDate(date)
+                ) { entries, recurring -> Pair(entries, recurring) }
+            }.collect { (entries, recurring) ->
                 val consumed = entries.fold(Macros()) { acc, ewf ->
                     val scale = ewf.entry.actualAmount / ewf.food.baseAmount
                     acc.copy(
                         calories = acc.calories + ewf.food.calories * scale,
                         proteinG = acc.proteinG + ewf.food.proteinG * scale,
                         carbsG = acc.carbsG + ewf.food.carbsG * scale,
-                        fatG = acc.fatG + ewf.food.fatG * scale
+                        fatG = acc.fatG + ewf.food.fatG * scale,
+                        fiberG = acc.fiberG + ewf.food.fiberG * scale
+                    )
+                }
+                val totalConsumed = recurring.fold(consumed) { acc, r ->
+                    val scale = r.displayAmount / r.food.baseAmount
+                    acc.copy(
+                        calories = acc.calories + r.food.calories * scale,
+                        proteinG = acc.proteinG + r.food.proteinG * scale,
+                        carbsG = acc.carbsG + r.food.carbsG * scale,
+                        fatG = acc.fatG + r.food.fatG * scale,
+                        fiberG = acc.fiberG + r.food.fiberG * scale
                     )
                 }
                 _uiState.update {
                     it.copy(
                         date = _selectedDate.value,
                         entries = entries,
-                        consumed = consumed
+                        recurringEntries = recurring,
+                        consumed = totalConsumed
                     )
                 }
             }
@@ -108,6 +129,36 @@ class DiaryViewModel @Inject constructor(
     fun deleteDiaryEntry(id: Long) {
         viewModelScope.launch {
             diaryRepository.deleteDiaryEntryById(id)
+        }
+    }
+
+    // ── Recurring actions ──────────────────────────────────────────────────────
+
+    fun skipRecurringForToday(display: RecurringEntryDisplay) {
+        viewModelScope.launch {
+            if (display.overrideId != null) {
+                // Already has an EDIT override — replace it with a SKIP
+                recurringRepository.removeOverride(display.overrideId)
+            }
+            recurringRepository.skipForDate(display.recurringEntry.id, _selectedDate.value)
+        }
+    }
+
+    fun removeAllFutureRecurring(display: RecurringEntryDisplay) {
+        viewModelScope.launch {
+            recurringRepository.deactivateFromDate(display.recurringEntry, _selectedDate.value)
+        }
+    }
+
+    fun editRecurringForToday(display: RecurringEntryDisplay, newAmount: Float) {
+        viewModelScope.launch {
+            recurringRepository.editForDate(display.recurringEntry.id, _selectedDate.value, newAmount)
+        }
+    }
+
+    fun editAllFutureRecurring(display: RecurringEntryDisplay, newAmount: Float) {
+        viewModelScope.launch {
+            recurringRepository.editFromDate(display.recurringEntry, _selectedDate.value, newAmount)
         }
     }
 
@@ -153,24 +204,18 @@ class DiaryViewModel @Inject constructor(
 
     // Returns Triple(foodName, amount, unit) or null if unparseable
     private fun parseVoiceText(text: String): Triple<String, Float, String>? {
-        // First convert any word-form numbers to digits ("hundred fifty" → "150")
         val normalized = convertWordNumbers(text.lowercase().trim())
-
-        // Find the first number (int or decimal)
         val numberRegex = Regex("""(\d+\.?\d*)""")
         val numberMatch = numberRegex.find(normalized) ?: return null
         val amount = numberMatch.groupValues[1].toFloatOrNull() ?: return null
 
-        // Find optional unit after the number
         val unitRegex = Regex("""${Regex.escape(numberMatch.value)}\s*(grams?|g|kilograms?|kg|ounces?|oz|milliliters?|ml|liters?|l|lbs?|pounds?|cups?|tbsp|tsp|serving|servings|pieces?|pcs?|slices?)\b""")
         val unitMatch = unitRegex.find(normalized)
         val unit = unitMatch?.groupValues?.get(1) ?: "g"
 
-        // Remove the number + unit from text to isolate the food name
         val consumed = unitMatch?.value ?: numberMatch.value
         var foodPart = normalized.replace(consumed, " ")
 
-        // Remove common stopwords / command words / filler
         val stopwords = setOf(
             "add", "log", "track", "record", "i", "had", "ate", "eat", "have",
             "a", "an", "the", "of", "for", "or", "with", "today", "now",
@@ -184,10 +229,6 @@ class DiaryViewModel @Inject constructor(
         return if (foodPart.isBlank()) null else Triple(foodPart, amount, unit)
     }
 
-    /**
-     * Converts word-form numbers in a string to digit form.
-     * e.g. "hundred fifty" → "150", "two hundred grams" → "200 grams"
-     */
     private fun convertWordNumbers(text: String): String {
         val ones = mapOf(
             "zero" to 0L, "one" to 1L, "two" to 2L, "three" to 3L, "four" to 4L,
@@ -200,7 +241,6 @@ class DiaryViewModel @Inject constructor(
             "twenty" to 20L, "thirty" to 30L, "forty" to 40L, "fifty" to 50L,
             "sixty" to 60L, "seventy" to 70L, "eighty" to 80L, "ninety" to 90L
         )
-        val numWords = ones.keys + tensMap.keys + setOf("hundred", "thousand")
 
         val words = text.split(Regex("\\s+"))
         val result = mutableListOf<String>()
@@ -226,7 +266,6 @@ class DiaryViewModel @Inject constructor(
 
     private fun fuzzyMatch(query: String, foods: List<FoodItem>): FoodItem? {
         if (foods.isEmpty()) return null
-
         val queryNorm = query.lowercase().trim()
         val scored = foods.map { food ->
             val nameNorm = food.name.lowercase().trim()
@@ -238,9 +277,6 @@ class DiaryViewModel @Inject constructor(
             food to score
         }
         val best = scored.minByOrNull { it.second } ?: return null
-
-        // Only accept if edit distance is ≤ 40% of the longer string's length.
-        // This prevents "egg" matching "test" (distance=3, 3/4=75% — rejected).
         val maxLen = maxOf(queryNorm.length, best.first.name.lowercase().length)
         val threshold = (maxLen * 0.40).toInt().coerceAtLeast(1)
         return if (best.second <= threshold) best.first else null

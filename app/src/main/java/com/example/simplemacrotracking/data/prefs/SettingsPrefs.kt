@@ -63,6 +63,10 @@ class SettingsPrefs @Inject constructor(@ApplicationContext context: Context) {
         get() = prefs.getInt("fat_goal", 0)
         set(v) = prefs.edit().putInt("fat_goal", v).apply()
 
+    var fiberGoal: Int
+        get() = prefs.getInt("fiber_goal", 0)
+        set(v) = prefs.edit().putInt("fiber_goal", v).apply()
+
     var preferredWeightUnit: WeightUnit
         get() = WeightUnit.valueOf(prefs.getString("weight_unit", WeightUnit.LB.name)!!)
         set(v) = prefs.edit().putString("weight_unit", v.name).apply()
@@ -75,6 +79,26 @@ class SettingsPrefs @Inject constructor(@ApplicationContext context: Context) {
      * Ordered list of AI providers. The app tries them top-to-bottom (waterfall).
      * On first access, auto-migrates the legacy [aiApiKey] into a Gemini provider.
      */
+    var graphShowWeight: Boolean
+        get() = prefs.getBoolean("graph_show_weight", true)
+        set(v) = prefs.edit().putBoolean("graph_show_weight", v).apply()
+
+    var graphShowCalories: Boolean
+        get() = prefs.getBoolean("graph_show_calories", true)
+        set(v) = prefs.edit().putBoolean("graph_show_calories", v).apply()
+
+    var graphShowMovingAverage: Boolean
+        get() = prefs.getBoolean("graph_show_ma", false)
+        set(v) = prefs.edit().putBoolean("graph_show_ma", v).apply()
+
+    var graphMovingAverageDays: Int
+        get() = prefs.getInt("graph_ma_days", 7)
+        set(v) = prefs.edit().putInt("graph_ma_days", v).apply()
+
+    var graphTimeRange: String
+        get() = prefs.getString("graph_time_range", "M3") ?: "M3"
+        set(v) = prefs.edit().putString("graph_time_range", v).apply()
+
     var aiProviders: List<AiProviderConfig>
         get() {
             val json = prefs.getString("ai_providers", null)

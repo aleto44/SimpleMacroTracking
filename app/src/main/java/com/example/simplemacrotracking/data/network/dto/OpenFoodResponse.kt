@@ -29,6 +29,8 @@ data class OpenFoodNutriments(
     @Json(name = "energy-kcal_serving") val caloriesPerServing: Float? = null,
     @Json(name = "proteins_serving") val proteinPerServing: Float? = null,
     @Json(name = "carbohydrates_serving") val carbsPerServing: Float? = null,
-    @Json(name = "fat_serving") val fatPerServing: Float? = null
+    @Json(name = "fat_serving") val fatPerServing: Float? = null,
+    @Json(name = "fiber_100g") val fiberPer100g: Float? = null,
+    @Json(name = "fiber_serving") val fiberPerServing: Float? = null
 )
 
