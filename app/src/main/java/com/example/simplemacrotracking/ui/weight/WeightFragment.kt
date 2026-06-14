@@ -327,8 +327,19 @@ class WeightFragment : Fragment() {
             .sortedBy { it.key }
             .map { it.key.toEpochDay().toFloat() to it.value }
 
-        val weightPairs: List<Pair<Float, Float>> = state.filteredEntries
+        var weightPairs: List<Pair<Float, Float>> = state.filteredEntries
             .map { it.date.toEpochDay().toFloat() to it.value }
+
+        // If fewer than 2 weight points fall in the visible window, extend back to the most
+        // recent entry before the cutoff so a connecting line is drawn instead of an isolated dot.
+        if (weightPairs.size < 2 && calCutoff != null) {
+            val prev = state.allEntries
+                .filter { it.date.isBefore(calCutoff) }
+                .maxByOrNull { it.date }
+            if (prev != null) {
+                weightPairs = listOf(prev.date.toEpochDay().toFloat() to prev.value) + weightPairs
+            }
+        }
 
         val dataSets = mutableListOf<LineDataSet>()
 

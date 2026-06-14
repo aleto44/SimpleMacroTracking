@@ -40,6 +40,8 @@ class FoodRepository @Inject constructor(
 
     suspend fun deleteFoodItem(item: FoodItem) = dao.deleteFoodItem(item)
 
+    suspend fun deleteAllFoodItems() = dao.deleteAllFoodItems()
+
     suspend fun fetchByBarcode(barcode: String): NetworkResult<FoodItem> {
         if (!networkUtils.isOnline()) {
             val cached = dao.getFoodItemByBarcode(barcode)

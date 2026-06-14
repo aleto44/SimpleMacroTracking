@@ -29,8 +29,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
         Room.databaseBuilder(ctx, AppDatabase::class.java, "macro_db")
-            .addMigrations(AppDatabase.MIGRATION_3_4)
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            .addMigrations(AppDatabase.MIGRATION_1_3, AppDatabase.MIGRATION_3_4)
             .build()
 
     @Provides

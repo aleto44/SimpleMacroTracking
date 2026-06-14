@@ -200,6 +200,18 @@
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Import CSV"
             style="@style/Style.Macro.Button.Ghost"
+            android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_delete_all_food"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Delete All Food Entries / Food"
+            style="@style/Style.Macro.Button.Ghost"
+            android:layout_marginBottom="8dp" />
+
+        <Button android:id="@+id/btn_delete_all_weight"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Delete All Weight Entries"
+            style="@style/Style.Macro.Button.Ghost"
             android:layout_marginBottom="16dp" />
 
     </LinearLayout>

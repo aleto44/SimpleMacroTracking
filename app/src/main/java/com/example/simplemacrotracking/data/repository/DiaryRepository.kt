@@ -30,5 +30,7 @@ class DiaryRepository @Inject constructor(private val dao: DiaryEntryDao) {
 
     suspend fun getEntryForDateAndFood(date: String, foodItemId: Long): DiaryEntry? =
         dao.getEntryForDateAndFood(date, foodItemId)
+
+    suspend fun deleteAllDiaryEntries() = dao.deleteAllDiaryEntries()
 }
 

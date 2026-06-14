@@ -20,6 +20,8 @@ class WeightRepository @Inject constructor(private val dao: WeightEntryDao) {
 
     suspend fun deleteWeightEntry(entry: WeightEntry) = dao.deleteWeightEntry(entry)
 
+    suspend fun deleteAllWeightEntries() = dao.deleteAllWeightEntries()
+
     suspend fun getEntryForDate(date: String): WeightEntry? = dao.getEntryForDate(date)
 
     /**

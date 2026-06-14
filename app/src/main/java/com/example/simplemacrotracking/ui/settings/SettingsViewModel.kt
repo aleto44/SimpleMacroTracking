@@ -6,6 +6,7 @@ import com.example.simplemacrotracking.data.model.AiProviderConfig
 import com.example.simplemacrotracking.data.model.AiProviderType
 import com.example.simplemacrotracking.data.model.DiaryEntryWithFood
 import com.example.simplemacrotracking.data.model.WeightEntry
+import com.example.simplemacrotracking.data.repository.FoodRepository
 import com.example.simplemacrotracking.data.model.enums.WeightUnit
 import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.example.simplemacrotracking.data.repository.DiaryRepository
@@ -46,6 +47,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsPrefs: SettingsPrefs,
     private val weightRepository: WeightRepository,
     private val diaryRepository: DiaryRepository,
+    private val foodRepository: FoodRepository,
     private val networkUtils: NetworkUtils,
     private val waterfallAiService: WaterfallAiService
 ) : ViewModel() {
@@ -137,4 +139,19 @@ class SettingsViewModel @Inject constructor(
     suspend fun getAllDiaryEntries(): List<DiaryEntryWithFood> = diaryRepository.getAllEntriesWithFood()
 
     suspend fun getAllWeightEntries(): List<WeightEntry> = weightRepository.getAllWeightEntriesOnce()
+
+    fun deleteAllFoodAndEntries(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            diaryRepository.deleteAllDiaryEntries()
+            foodRepository.deleteAllFoodItems()
+            onComplete()
+        }
+    }
+
+    fun deleteAllWeightEntries(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            weightRepository.deleteAllWeightEntries()
+            onComplete()
+        }
+    }
 }

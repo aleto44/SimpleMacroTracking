@@ -27,6 +27,9 @@ interface DiaryEntryDao {
     @Query("DELETE FROM diary_entries WHERE id = :id")
     suspend fun deleteDiaryEntryById(id: Long)
 
+    @Query("DELETE FROM diary_entries")
+    suspend fun deleteAllDiaryEntries()
+
     @Transaction
     @Query("SELECT * FROM diary_entries ORDER BY date ASC")
     suspend fun getAllEntriesWithFood(): List<DiaryEntryWithFood>

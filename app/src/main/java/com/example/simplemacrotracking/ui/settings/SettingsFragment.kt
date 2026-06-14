@@ -14,6 +14,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.simplemacrotracking.data.db.AppDatabase
 import com.example.simplemacrotracking.data.model.AiProviderType
 import com.example.simplemacrotracking.data.model.enums.WeightUnit
 import com.example.simplemacrotracking.data.repository.DiaryRepository
@@ -34,6 +35,7 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: SettingsViewModel by viewModels()
 
+    @Inject lateinit var database: AppDatabase
     @Inject lateinit var foodRepository: FoodRepository
     @Inject lateinit var diaryRepository: DiaryRepository
     @Inject lateinit var weightRepository: WeightRepository
@@ -47,7 +49,7 @@ class SettingsFragment : Fragment() {
         val appContext = requireContext().applicationContext
         lifecycleScope.launch {
             val result = CsvImporter.importCsv(
-                appContext, uri, foodRepository, diaryRepository, weightRepository
+                appContext, uri, database, foodRepository, diaryRepository, weightRepository
             )
             // Only show the Snackbar if the view is still alive
             val root = _binding?.root ?: return@launch
@@ -106,6 +108,32 @@ class SettingsFragment : Fragment() {
             }
         }
         binding.btnImportCsv.setOnClickListener { importLauncher.launch("*/*") }
+
+        binding.btnDeleteAllFood.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete All Food Data")
+                .setMessage("This will permanently delete all food entries and food items. This cannot be undone.")
+                .setPositiveButton("Delete") { _, _ ->
+                    viewModel.deleteAllFoodAndEntries {
+                        Snackbar.make(binding.root, "All food entries and food deleted", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        binding.btnDeleteAllWeight.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete All Weight Entries")
+                .setMessage("This will permanently delete all weight entries. This cannot be undone.")
+                .setPositiveButton("Delete") { _, _ ->
+                    viewModel.deleteAllWeightEntries {
+                        Snackbar.make(binding.root, "All weight entries deleted", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

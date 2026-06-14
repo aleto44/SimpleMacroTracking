@@ -39,6 +39,40 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeIngredientDao(): RecipeIngredientDao
 
     companion object {
+        val MIGRATION_1_3 = object : Migration(1, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE food_items ADD COLUMN fiberG REAL NOT NULL DEFAULT 0")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS recurring_entries (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        foodItemId INTEGER NOT NULL,
+                        actualAmount REAL NOT NULL,
+                        measurementType TEXT NOT NULL,
+                        startDate TEXT NOT NULL,
+                        endDate TEXT,
+                        isActive INTEGER NOT NULL,
+                        FOREIGN KEY(foodItemId) REFERENCES food_items(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_entries_foodItemId ON recurring_entries(foodItemId)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS recurring_entry_overrides (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        recurringEntryId INTEGER NOT NULL,
+                        date TEXT NOT NULL,
+                        overrideType TEXT NOT NULL,
+                        overrideAmount REAL,
+                        FOREIGN KEY(recurringEntryId) REFERENCES recurring_entries(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_entry_overrides_recurringEntryId ON recurring_entry_overrides(recurringEntryId)")
+            }
+        }
+
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(

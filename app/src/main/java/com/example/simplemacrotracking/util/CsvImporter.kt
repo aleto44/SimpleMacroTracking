@@ -2,6 +2,8 @@ package com.example.simplemacrotracking.util
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
+import com.example.simplemacrotracking.data.db.AppDatabase
 import com.example.simplemacrotracking.data.model.DiaryEntry
 import com.example.simplemacrotracking.data.model.FoodItem
 import com.example.simplemacrotracking.data.model.WeightEntry
@@ -19,6 +21,7 @@ object CsvImporter {
     suspend fun importCsv(
         context: Context,
         uri: Uri,
+        database: AppDatabase,
         foodRepository: FoodRepository,
         diaryRepository: DiaryRepository,
         weightRepository: WeightRepository
@@ -26,8 +29,9 @@ object CsvImporter {
         val lines = try {
             context.contentResolver.openInputStream(uri)
                 ?.bufferedReader()
-                ?.readLines()
+                ?.lineSequence()
                 ?.filter { it.isNotBlank() }
+                ?.toList()
                 ?: return ImportResult(0, 0)
         } catch (e: Exception) {
             return ImportResult(0, 0)
@@ -39,11 +43,11 @@ object CsvImporter {
 
         return when {
             header.contains("food_name") ->
-                importDiary(lines, header, foodRepository, diaryRepository)
+                importDiary(lines, header, database, foodRepository, diaryRepository)
             header.contains("calories") && !header.contains("food_name") && header.contains("date") ->
-                importCaloriesOnly(lines, header, foodRepository, diaryRepository)
+                importCaloriesOnly(lines, header, database, foodRepository, diaryRepository)
             header.contains("weight") && header.contains("date") ->
-                importWeight(lines, header, weightRepository)
+                importWeight(lines, header, database, weightRepository)
             else -> ImportResult(0, lines.size - 1)
         }
     }
@@ -51,6 +55,7 @@ object CsvImporter {
     private suspend fun importDiary(
         lines: List<String>,
         header: List<String>,
+        database: AppDatabase,
         foodRepository: FoodRepository,
         diaryRepository: DiaryRepository
     ): ImportResult {
@@ -68,54 +73,63 @@ object CsvImporter {
         var imported = 0
         var skipped = 0
 
-        for (i in 1 until lines.size) {
-            try {
-                val cols = parseCsvLine(lines[i])
-                if (cols.size <= maxOf(dateIdx, nameIdx, amountIdx)) { skipped++; continue }
+        // Cache food items by name (nullable: null means creation failed) to avoid repeated DB lookups
+        val foodCache = mutableMapOf<String, FoodItem?>()
 
-                val date   = LocalDate.parse(cols[dateIdx].trim())
-                val name   = cols[nameIdx].trim()
-                val amountStr = cols.getOrNull(amountIdx)?.trim()
-                val amount = amountStr?.toFloatOrNull()
-                if (amount == null) { skipped++; continue }
+        database.withTransaction {
+            for (i in 1 until lines.size) {
+                try {
+                    val cols = parseCsvLine(lines[i])
+                    if (cols.size <= maxOf(dateIdx, nameIdx, amountIdx)) { skipped++; continue }
 
-                val unit = cols.getOrNull(unitIdx)?.trim() ?: "g"
-                val cal  = cols.getOrNull(calIdx)?.trim()?.toFloatOrNull() ?: 0f
-                val prot = cols.getOrNull(protIdx)?.trim()?.toFloatOrNull() ?: 0f
-                val carb = cols.getOrNull(carbIdx)?.trim()?.toFloatOrNull() ?: 0f
-                val fat  = cols.getOrNull(fatIdx)?.trim()?.toFloatOrNull() ?: 0f
+                    val date      = LocalDate.parse(cols[dateIdx].trim())
+                    val name      = cols[nameIdx].trim()
+                    val amountStr = cols.getOrNull(amountIdx)?.trim()
+                    val amount    = amountStr?.toFloatOrNull()
+                    if (amount == null) { skipped++; continue }
 
-                // Find or create food item
-                var food = foodRepository.getFoodItemByName(name)
-                if (food == null) {
-                    val id = foodRepository.saveFoodItem(
-                        FoodItem(
-                            name = name, baseAmount = amount, measurementType = unit,
-                            calories = cal, proteinG = prot, carbsG = carb, fatG = fat,
-                            source = FoodSource.MANUAL
+                    val unit = cols.getOrNull(unitIdx)?.trim() ?: "g"
+                    val cal  = cols.getOrNull(calIdx)?.trim()?.toFloatOrNull() ?: 0f
+                    val prot = cols.getOrNull(protIdx)?.trim()?.toFloatOrNull() ?: 0f
+                    val carb = cols.getOrNull(carbIdx)?.trim()?.toFloatOrNull() ?: 0f
+                    val fat  = cols.getOrNull(fatIdx)?.trim()?.toFloatOrNull() ?: 0f
+
+                    val food: FoodItem? = if (name in foodCache) {
+                        foodCache[name]
+                    } else {
+                        val found = foodRepository.getFoodItemByName(name)
+                            ?: run {
+                                val id = foodRepository.saveFoodItem(
+                                    FoodItem(
+                                        name = name, baseAmount = amount, measurementType = unit,
+                                        calories = cal, proteinG = prot, carbsG = carb, fatG = fat,
+                                        source = FoodSource.MANUAL
+                                    )
+                                )
+                                foodRepository.getFoodItemById(id)
+                            }
+                        foodCache[name] = found
+                        found
+                    }
+                    if (food == null) { skipped++; continue }
+
+                    val existing = diaryRepository.getEntryForDateAndFood(date.toString(), food.id)
+                    if (existing != null) {
+                        diaryRepository.updateDiaryEntry(
+                            existing.copy(actualAmount = amount, measurementType = unit)
                         )
-                    )
-                    food = foodRepository.getFoodItemById(id)
-                }
-                if (food == null) { skipped++; continue }
-
-                // Upsert diary entry by (date, foodItemId)
-                val existing = diaryRepository.getEntryForDateAndFood(date.toString(), food.id)
-                if (existing != null) {
-                    diaryRepository.updateDiaryEntry(
-                        existing.copy(actualAmount = amount, measurementType = unit)
-                    )
-                } else {
-                    diaryRepository.insertDiaryEntry(
-                        DiaryEntry(
-                            date = date, foodItemId = food.id,
-                            actualAmount = amount, measurementType = unit
+                    } else {
+                        diaryRepository.insertDiaryEntry(
+                            DiaryEntry(
+                                date = date, foodItemId = food.id,
+                                actualAmount = amount, measurementType = unit
+                            )
                         )
-                    )
+                    }
+                    imported++
+                } catch (e: Exception) {
+                    skipped++
                 }
-                imported++
-            } catch (e: Exception) {
-                skipped++
             }
         }
         return ImportResult(imported, skipped)
@@ -124,6 +138,7 @@ object CsvImporter {
     private suspend fun importCaloriesOnly(
         lines: List<String>,
         header: List<String>,
+        database: AppDatabase,
         foodRepository: FoodRepository,
         diaryRepository: DiaryRepository
     ): ImportResult {
@@ -131,8 +146,6 @@ object CsvImporter {
         val calIdx  = header.indexOf("calories")
         if (dateIdx < 0 || calIdx < 0) return ImportResult(0, lines.size - 1)
 
-        // Find or create the single placeholder FoodItem for historical data.
-        // baseAmount = 1, calories = 1 so that actualAmount == calorie count after scaling.
         val placeholderName = "Historical Import"
         val placeholder: FoodItem = foodRepository.getFoodItemByName(placeholderName)
             ?: run {
@@ -154,32 +167,33 @@ object CsvImporter {
         var imported = 0
         var skipped  = 0
 
-        for (i in 1 until lines.size) {
-            try {
-                val cols     = parseCsvLine(lines[i])
-                val dateStr  = cols.getOrNull(dateIdx)?.trim()
-                val calStr   = cols.getOrNull(calIdx)?.trim()
-                if (dateStr.isNullOrBlank() || calStr.isNullOrBlank()) { skipped++; continue }
+        database.withTransaction {
+            for (i in 1 until lines.size) {
+                try {
+                    val cols    = parseCsvLine(lines[i])
+                    val dateStr = cols.getOrNull(dateIdx)?.trim()
+                    val calStr  = cols.getOrNull(calIdx)?.trim()
+                    if (dateStr.isNullOrBlank() || calStr.isNullOrBlank()) { skipped++; continue }
 
-                val date     = LocalDate.parse(dateStr)
-                val calories = calStr.toFloatOrNull()
-                if (calories == null) { skipped++; continue }
+                    val date     = LocalDate.parse(dateStr)
+                    val calories = calStr.toFloatOrNull()
+                    if (calories == null) { skipped++; continue }
 
-                // Skip if an entry for this date + placeholder already exists (no duplication)
-                val existing = diaryRepository.getEntryForDateAndFood(date.toString(), placeholder.id)
-                if (existing != null) { skipped++; continue }
+                    val existing = diaryRepository.getEntryForDateAndFood(date.toString(), placeholder.id)
+                    if (existing != null) { skipped++; continue }
 
-                diaryRepository.insertDiaryEntry(
-                    DiaryEntry(
-                        date           = date,
-                        foodItemId     = placeholder.id,
-                        actualAmount   = calories,
-                        measurementType = "kcal"
+                    diaryRepository.insertDiaryEntry(
+                        DiaryEntry(
+                            date            = date,
+                            foodItemId      = placeholder.id,
+                            actualAmount    = calories,
+                            measurementType = "kcal"
+                        )
                     )
-                )
-                imported++
-            } catch (e: Exception) {
-                skipped++
+                    imported++
+                } catch (e: Exception) {
+                    skipped++
+                }
             }
         }
         return ImportResult(imported, skipped)
@@ -188,6 +202,7 @@ object CsvImporter {
     private suspend fun importWeight(
         lines: List<String>,
         header: List<String>,
+        database: AppDatabase,
         weightRepository: WeightRepository
     ): ImportResult {
         val dateIdx  = header.indexOf("date")
@@ -199,31 +214,33 @@ object CsvImporter {
         var imported = 0
         var skipped = 0
 
-        for (i in 1 until lines.size) {
-            try {
-                val cols      = parseCsvLine(lines[i])
-                val dateStr   = cols.getOrNull(dateIdx)?.trim()
-                if (dateStr.isNullOrBlank()) { skipped++; continue }
-                val date  = LocalDate.parse(dateStr)
-                val valueStr = cols.getOrNull(valueIdx)?.trim()
-                val value = valueStr?.toFloatOrNull()
-                if (value == null) { skipped++; continue }
+        database.withTransaction {
+            for (i in 1 until lines.size) {
+                try {
+                    val cols     = parseCsvLine(lines[i])
+                    val dateStr  = cols.getOrNull(dateIdx)?.trim()
+                    if (dateStr.isNullOrBlank()) { skipped++; continue }
+                    val date     = LocalDate.parse(dateStr)
+                    val valueStr = cols.getOrNull(valueIdx)?.trim()
+                    val value    = valueStr?.toFloatOrNull()
+                    if (value == null) { skipped++; continue }
 
-                val unit = try {
-                    WeightUnit.valueOf(cols.getOrNull(unitIdx)?.trim()?.uppercase() ?: "LB")
-                } catch (e: IllegalArgumentException) { WeightUnit.LB }
+                    val unit = try {
+                        WeightUnit.valueOf(cols.getOrNull(unitIdx)?.trim()?.uppercase() ?: "LB")
+                    } catch (e: IllegalArgumentException) { WeightUnit.LB }
 
-                val existing = weightRepository.getEntryForDate(date.toString())
-                if (existing != null) {
-                    weightRepository.updateWeightEntry(existing.copy(value = value, unit = unit))
-                } else {
-                    weightRepository.insertWeightEntry(
-                        WeightEntry(date = date, value = value, unit = unit)
-                    )
+                    val existing = weightRepository.getEntryForDate(date.toString())
+                    if (existing != null) {
+                        weightRepository.updateWeightEntry(existing.copy(value = value, unit = unit))
+                    } else {
+                        weightRepository.insertWeightEntry(
+                            WeightEntry(date = date, value = value, unit = unit)
+                        )
+                    }
+                    imported++
+                } catch (e: Exception) {
+                    skipped++
                 }
-                imported++
-            } catch (e: Exception) {
-                skipped++
             }
         }
         return ImportResult(imported, skipped)
@@ -250,4 +267,3 @@ object CsvImporter {
         return result
     }
 }
-

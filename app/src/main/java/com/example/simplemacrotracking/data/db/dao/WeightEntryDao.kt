@@ -24,5 +24,8 @@ interface WeightEntryDao {
 
     @Query("SELECT * FROM weight_entries WHERE date = :date LIMIT 1")
     suspend fun getEntryForDate(date: String): WeightEntry?
+
+    @Query("DELETE FROM weight_entries")
+    suspend fun deleteAllWeightEntries()
 }
 
