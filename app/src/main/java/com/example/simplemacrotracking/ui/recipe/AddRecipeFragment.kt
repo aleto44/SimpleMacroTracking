@@ -47,6 +47,9 @@ class AddRecipeFragment : BottomSheetDialogFragment() {
     private lateinit var ingredientListAdapter: IngredientListAdapter
     private var pickerDialog: AlertDialog? = null
 
+    private val editRecipeId: Long get() = arguments?.getLong("editRecipeId", -1L) ?: -1L
+    private val isEditMode: Boolean get() = editRecipeId >= 0
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -70,6 +73,12 @@ class AddRecipeFragment : BottomSheetDialogFragment() {
         }
         binding.rvIngredients.adapter = ingredientListAdapter
 
+        if (isEditMode) {
+            binding.tvRecipeTitle.text = "Edit Recipe"
+            binding.btnSaveRecipe.text = "Save Changes"
+            viewLifecycleOwner.lifecycleScope.launch { loadExistingRecipe(editRecipeId) }
+        }
+
         binding.btnAddIngredient.setOnClickListener { showIngredientPicker() }
         binding.btnCancelRecipe.setOnClickListener { dismiss() }
         binding.btnSaveRecipe.setOnClickListener { saveRecipe() }
@@ -83,6 +92,22 @@ class AddRecipeFragment : BottomSheetDialogFragment() {
                 showAmountDialog(food)
             }
         }
+    }
+
+    private suspend fun loadExistingRecipe(recipeId: Long) {
+        val recipe = foodRepository.getFoodItemById(recipeId) ?: return
+        binding.etRecipeName.setText(recipe.name)
+        binding.etServingAmount.setText(formatFloat(recipe.baseAmount))
+        binding.actvServingUnit.setText(recipe.measurementType, false)
+
+        val ingredients = recipeRepository.getIngredientsForRecipe(recipeId)
+        for ((ingredient, food) in ingredients) {
+            if (food != null) {
+                ingredientDrafts.add(IngredientDraft(food, ingredient.amount))
+            }
+        }
+        ingredientListAdapter.submitList(ingredientDrafts.toList())
+        updateTotals()
     }
 
     private fun showIngredientPicker() {
@@ -253,7 +278,11 @@ class AddRecipeFragment : BottomSheetDialogFragment() {
 
         val unit = binding.actvServingUnit.text.toString().trim().ifBlank { "serving" }
         viewLifecycleOwner.lifecycleScope.launch {
-            recipeRepository.saveRecipe(name, baseAmount, unit, ingredientDrafts.toList())
+            if (isEditMode) {
+                recipeRepository.updateRecipe(editRecipeId, name, baseAmount, unit, ingredientDrafts.toList())
+            } else {
+                recipeRepository.saveRecipe(name, baseAmount, unit, ingredientDrafts.toList())
+            }
             dismiss()
         }
     }

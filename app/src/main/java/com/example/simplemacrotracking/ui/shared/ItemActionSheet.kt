@@ -19,6 +19,7 @@ import com.example.simplemacrotracking.data.repository.FoodRepository
 import com.example.simplemacrotracking.data.model.enums.FoodSource
 import com.example.simplemacrotracking.data.repository.RecipeRepository
 import com.example.simplemacrotracking.data.repository.RecurringRepository
+import com.example.simplemacrotracking.ui.recipe.AddRecipeFragment
 import com.example.simplemacrotracking.databinding.FragmentItemActionSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,10 +77,17 @@ class ItemActionSheet : BottomSheetDialogFragment() {
 
         binding.btnEditFood.setOnClickListener {
             val food = foodItem ?: return@setOnClickListener
-            findNavController().navigate(
-                R.id.action_itemActionSheet_to_addEntryBottomSheet,
-                bundleOf("editFoodId" to food.id, "targetDate" to targetDate)
-            )
+            if (food.source == FoodSource.RECIPE) {
+                dismiss()
+                AddRecipeFragment().apply {
+                    arguments = bundleOf("editRecipeId" to food.id)
+                }.show(parentFragmentManager, "edit_recipe")
+            } else {
+                findNavController().navigate(
+                    R.id.action_itemActionSheet_to_addEntryBottomSheet,
+                    bundleOf("editFoodId" to food.id, "targetDate" to targetDate)
+                )
+            }
         }
 
         binding.btnAction.setOnClickListener {

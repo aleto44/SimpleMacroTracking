@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.simplemacrotracking.MainActivity
+import com.example.simplemacrotracking.data.model.enums.FoodSource
 import com.example.simplemacrotracking.ui.recipe.AddRecipeFragment
 import com.example.simplemacrotracking.R
 import com.example.simplemacrotracking.data.model.FoodItem
@@ -83,14 +84,36 @@ class FoodDatabaseFragment : Fragment() {
                 }
             },
             onItemLongClick = { food ->
-                AlertDialog.Builder(requireContext())
-                    .setTitle("Delete food item?")
-                    .setMessage("\"${food.name}\" will be removed from your food database. Diary entries using it will also be deleted.")
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Delete") { _, _ ->
-                        viewModel.deleteFoodItem(food)
-                    }
-                    .show()
+                if (food.source == FoodSource.RECIPE) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle(food.name)
+                        .setItems(arrayOf("Edit Recipe", "Delete Recipe")) { _, which ->
+                            when (which) {
+                                0 -> {
+                                    val fragment = AddRecipeFragment().apply {
+                                        arguments = androidx.core.os.bundleOf("editRecipeId" to food.id)
+                                    }
+                                    fragment.show(parentFragmentManager, "edit_recipe")
+                                }
+                                1 -> AlertDialog.Builder(requireContext())
+                                    .setTitle("Delete recipe?")
+                                    .setMessage("\"${food.name}\" will be removed from your food database. Diary entries using it will also be deleted.")
+                                    .setNegativeButton("Cancel", null)
+                                    .setPositiveButton("Delete") { _, _ -> viewModel.deleteFoodItem(food) }
+                                    .show()
+                            }
+                        }
+                        .show()
+                } else {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Delete food item?")
+                        .setMessage("\"${food.name}\" will be removed from your food database. Diary entries using it will also be deleted.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Delete") { _, _ ->
+                            viewModel.deleteFoodItem(food)
+                        }
+                        .show()
+                }
             }
         )
         binding.recyclerView.adapter = adapter

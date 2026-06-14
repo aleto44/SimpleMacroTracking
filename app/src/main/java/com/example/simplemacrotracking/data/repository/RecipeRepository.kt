@@ -19,6 +19,48 @@ class RecipeRepository @Inject constructor(
         recipeIngredientDao.getIngredientsForRecipe(recipeId)
             .map { it to foodItemDao.getFoodItemById(it.ingredientFoodItemId) }
 
+    suspend fun updateRecipe(
+        recipeId: Long,
+        name: String,
+        baseAmount: Float,
+        measurementType: String,
+        ingredients: List<IngredientDraft>
+    ) {
+        var totalCal = 0f; var totalP = 0f; var totalC = 0f; var totalF = 0f; var totalFib = 0f
+        for (d in ingredients) {
+            val scale = if (d.food.baseAmount > 0f) d.amount / d.food.baseAmount else 0f
+            totalCal += d.food.calories * scale
+            totalP   += d.food.proteinG * scale
+            totalC   += d.food.carbsG   * scale
+            totalF   += d.food.fatG     * scale
+            totalFib += d.food.fiberG   * scale
+        }
+        val existing = foodItemDao.getFoodItemById(recipeId) ?: return
+        foodItemDao.updateFoodItem(
+            existing.copy(
+                name = name,
+                baseAmount = baseAmount,
+                measurementType = measurementType,
+                calories = totalCal,
+                proteinG = totalP,
+                carbsG = totalC,
+                fatG = totalF,
+                fiberG = totalFib
+            )
+        )
+        recipeIngredientDao.deleteIngredientsForRecipe(recipeId)
+        recipeIngredientDao.insertIngredients(
+            ingredients.map { d ->
+                RecipeIngredient(
+                    recipeId = recipeId,
+                    ingredientFoodItemId = d.food.id,
+                    amount = d.amount,
+                    measurementType = d.food.measurementType
+                )
+            }
+        )
+    }
+
     suspend fun saveRecipe(
         name: String,
         baseAmount: Float,

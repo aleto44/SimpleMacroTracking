@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -37,6 +38,7 @@ class WeightFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: WeightViewModel by viewModels()
     private lateinit var entryAdapter: WeightEntryAdapter
+    private var lastSubmittedEntries: List<WeightEntry>? = null
     /** True while we are programmatically pushing data into the chart — suppresses gesture callbacks. */
     private var isUpdatingChart = false
     /** True while we are restoring persisted UI state — suppresses listener feedback loops. */
@@ -128,7 +130,16 @@ class WeightFragment : Fragment() {
                     .show()
             }
         )
+        binding.rvWeightEntries.setHasFixedSize(false)
         binding.rvWeightEntries.adapter = entryAdapter
+        binding.nestedScrollView.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
+                val contentHeight = v.getChildAt(0)?.height ?: return@OnScrollChangeListener
+                if (scrollY + v.height >= contentHeight - 300) {
+                    entryAdapter.loadMoreIfNeeded()
+                }
+            }
+        )
     }
 
     private fun setupChart() {
@@ -286,7 +297,10 @@ class WeightFragment : Fragment() {
         }
         updateChart(state)
         updateStats(state.filteredEntries, state.allEntries)
-        entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })
+        if (state.allEntries !== lastSubmittedEntries) {
+            lastSubmittedEntries = state.allEntries
+            entryAdapter.submitList(state.allEntries.sortedByDescending { it.date })
+        }
     }
 
     private fun movingAverage(entries: List<Pair<Float, Float>>, window: Int): List<Entry> {

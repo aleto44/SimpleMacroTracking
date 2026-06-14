@@ -9,8 +9,7 @@ import java.time.format.DateTimeFormatter
 
 class WeightEntryAdapter(
     private val onEdit: (WeightEntry) -> Unit,
-    private val onDelete: (WeightEntry) -> Unit,
-    private val onLoadMore: (() -> Unit)? = null
+    private val onDelete: (WeightEntry) -> Unit
 ) : RecyclerView.Adapter<WeightEntryAdapter.ViewHolder>() {
 
     private val fmt = DateTimeFormatter.ofPattern("MMM d, yyyy")
@@ -18,7 +17,7 @@ class WeightEntryAdapter(
     private var allEntries = listOf<WeightEntry>()
     private var loadedCount = 0
     private var isLoadingMore = false
-    private val batchSize = 50
+    private val batchSize = 20
 
     inner class ViewHolder(private val binding: ItemWeightEntryBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -37,19 +36,22 @@ class WeightEntryAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(displayedEntries[position])
-        if (position >= displayedEntries.size - 10 && !isLoadingMore && loadedCount < allEntries.size) {
-            holder.itemView.post { loadMore() }
-        }
     }
 
     override fun getItemCount() = displayedEntries.size
 
     fun submitList(entries: List<WeightEntry>) {
         allEntries = entries
+        val oldSize = displayedEntries.size
         displayedEntries.clear()
         loadedCount = 0
         isLoadingMore = false
+        if (oldSize > 0) notifyItemRangeRemoved(0, oldSize)
         loadMore()
+    }
+
+    fun loadMoreIfNeeded() {
+        if (!isLoadingMore && loadedCount < allEntries.size) loadMore()
     }
 
     fun updateItem(entry: WeightEntry) {
@@ -80,7 +82,5 @@ class WeightEntryAdapter(
         loadedCount = endIndex
         isLoadingMore = false
         notifyItemRangeInserted(oldSize, newEntries.size)
-        onLoadMore?.invoke()
     }
 }
-
