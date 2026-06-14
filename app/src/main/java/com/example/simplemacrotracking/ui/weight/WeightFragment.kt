@@ -432,21 +432,31 @@ class WeightFragment : Fragment() {
 
         binding.lineChart.data = LineData(dataSets.toList())
 
-        // Dynamic x-axis label format based on visible span
-        val allXValues = (weightPairs.map { it.first } + calEntries.map { it.first })
-        val spanDays = if (allXValues.size >= 2) allXValues.max() - allXValues.min() else 0f
+        // Determine the fixed x-axis window from the selected range (not from data extent).
+        val xMin: Float = (state.customRange?.first ?: calCutoff)?.toEpochDay()?.toFloat()
+            ?: (weightPairs.minOfOrNull { it.first } ?: today.toEpochDay().toFloat())
+        val xMax: Float = (state.customRange?.second ?: today).toEpochDay().toFloat()
+
+        val spanDays = xMax - xMin
         val useYearOnly = spanDays > 548f  // > ~1.5 years
-        binding.lineChart.xAxis.valueFormatter = object : ValueFormatter() {
-            private val fmtShort = DateTimeFormatter.ofPattern("MMM d")
-            private val fmtYear  = DateTimeFormatter.ofPattern("yyyy")
-            override fun getFormattedValue(value: Float): String = try {
-                val date = LocalDate.ofEpochDay(value.toLong())
-                if (useYearOnly) date.format(fmtYear) else date.format(fmtShort)
-            } catch (e: Exception) { "" }
+        binding.lineChart.xAxis.apply {
+            axisMinimum = xMin
+            axisMaximum = xMax + 0.5f  // small right padding
+            valueFormatter = object : ValueFormatter() {
+                private val fmtShort = DateTimeFormatter.ofPattern("MMM d")
+                private val fmtYear  = DateTimeFormatter.ofPattern("yyyy")
+                override fun getFormattedValue(value: Float): String = try {
+                    val date = LocalDate.ofEpochDay(value.toLong())
+                    if (useYearOnly) date.format(fmtYear) else date.format(fmtShort)
+                } catch (e: Exception) { "" }
+            }
         }
 
         isUpdatingChart = true
-        binding.lineChart.fitScreen()
+        // Reset zoom and move viewport to the fixed window instead of fitScreen(),
+        // so the x-axis always shows exactly the selected range even if data points
+        // exist outside it (e.g. anchor point for the connecting line).
+        binding.lineChart.resetZoom()
         binding.lineChart.invalidate()
         isUpdatingChart = false
     }
