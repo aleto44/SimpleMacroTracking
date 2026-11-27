@@ -23,6 +23,8 @@ import com.example.simplemacrotracking.data.repository.WeightRepository
 import com.example.simplemacrotracking.databinding.FragmentSettingsBinding
 import com.example.simplemacrotracking.util.CsvExporter
 import com.example.simplemacrotracking.util.CsvImporter
+import com.example.simplemacrotracking.util.FullDataExporter
+import com.example.simplemacrotracking.data.prefs.SettingsPrefs
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -40,7 +42,29 @@ class SettingsFragment : Fragment() {
     @Inject lateinit var diaryRepository: DiaryRepository
     @Inject lateinit var weightRepository: WeightRepository
 
+    @Inject lateinit var settingsPrefs: SettingsPrefs
+
     private lateinit var aiProviderAdapter: AiProviderAdapter
+
+    private val exportAllLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        val appContext = requireContext().applicationContext
+        lifecycleScope.launch {
+            val message = try {
+                val result = FullDataExporter.export(appContext, uri, database, settingsPrefs)
+                val diary = result.counts["diary_entries"] ?: 0
+                val foods = result.counts["food_items"] ?: 0
+                val weights = result.counts["weight_entries"] ?: 0
+                "Exported $diary diary entries, $foods foods, $weights weights (all tables)"
+            } catch (e: Exception) {
+                "Export failed: ${e.message}"
+            }
+            val root = _binding?.root ?: return@launch
+            Snackbar.make(root, message, Snackbar.LENGTH_LONG).show()
+        }
+    }
 
     private val importLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri ?: return@registerForActivityResult
@@ -97,6 +121,9 @@ class SettingsFragment : Fragment() {
             Snackbar.make(binding.root, "GitHub Models provider added ↓", Snackbar.LENGTH_SHORT).show()
         }
 
+        binding.btnExportAll.setOnClickListener {
+            exportAllLauncher.launch("macro-backup-${java.time.LocalDate.now()}.json")
+        }
         binding.btnExportDiary.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 CsvExporter.exportDiary(requireContext(), viewModel.getAllDiaryEntries())

@@ -184,6 +184,12 @@
             android:textAppearance="@style/TextAppearance.Macro.SectionLabel"
             android:layout_marginBottom="12dp" />
 
+        <Button android:id="@+id/btn_export_all"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Export All Data (JSON)"
+            style="@style/Style.Macro.Button.Ghost"
+            android:layout_marginBottom="8dp" />
+
         <Button android:id="@+id/btn_export_diary"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Export Diary CSV"
